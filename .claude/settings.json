@@ -71,7 +71,28 @@
       "Bash(netstat -tlnp)",
       "Bash(kill 71960 71976)",
       "Bash(bin/rails runner:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git push:*)",
+      "Bash(gh auth:*)",
+      "Bash(gh repo:*)",
+      "Bash(git rm:*)",
+      "Bash(git commit -m \"chore: temporarily remove CI workflow \\(token scope limitation\\):*)",
+      "Bash(git checkout:*)",
+      "Bash(git commit:*)",
+      "Bash(git reset:*)",
+      "Bash(ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=accept-new root@217.69.13.112 \"echo ''SSH OK'' && uname -a && cat /etc/os-release | head -5\")",
+      "Bash(ssh root@217.69.13.112 \"echo ''=== DOCKER ==='' && docker --version 2>/dev/null || echo ''no docker'' && echo ''=== RUBY ==='' && ruby --version 2>/dev/null || echo ''no ruby'' && echo ''=== NODE ==='' && node --version 2>/dev/null || echo ''no node'' && echo ''=== NGINX ==='' && nginx -v 2>&1 || echo ''no nginx'' && echo ''=== PORTS EN ECOUTE ==='' && ss -tlnp | grep -E '':80|:443|:3000|:8080'' && echo ''=== DOCKER CONTAINERS ==='' && docker ps --format ''table {{.Names}}\\\\t{{.Ports}}\\\\t{{.Status}}'' 2>/dev/null && echo ''=== DISK ==='' && df -h / && echo ''=== RAM ==='' && free -h\")",
+      "Bash(ssh root@217.69.13.112 \"docker exec kamal-proxy kamal-proxy list 2>/dev/null || echo ''list command failed''\")",
+      "Bash(RAILS_ENV=production bundle exec rails secret)",
+      "Bash(chmod 600 config/master.key)",
+      "Bash(ssh root@217.69.13.112 \"docker run -d --restart=always --name registry -p 5555:5000 registry:2 2>&1 && echo ''Registry started'' || echo ''Registry setup issue''\")",
+      "Bash(EDITOR=\"cat\" RAILS_ENV=production bundle exec rails credentials:edit)",
+      "Bash(EDITOR=\"true\" bundle exec rails credentials:edit)",
+      "Bash(ssh root@217.69.13.112 \"cat /etc/docker/daemon.json 2>/dev/null || echo ''{}''\")",
+      "Bash(ssh root@217.69.13.112:*)",
+      "Bash(kamal setup:*)",
+      "Bash(bundle exec:*)",
+      "Bash(scp config/master.key root@217.69.13.112:/opt/ci-prototype/config/master.key)"
     ]
   }
 }

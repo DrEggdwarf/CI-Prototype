@@ -3,9 +3,6 @@
 # If running the rails server then create or migrate all databases
 if [ "${@: -2:1}" == "./bin/rails" ] && [ "${@: -1:1}" == "server" ]; then
   ./bin/rails db:prepare
-  ./bin/rails db:prepare:queue 2>/dev/null || ./bin/rails db:migrate:queue 2>/dev/null || true
-  ./bin/rails db:prepare:cache 2>/dev/null || ./bin/rails db:migrate:cache 2>/dev/null || true
-  ./bin/rails db:prepare:cable 2>/dev/null || ./bin/rails db:migrate:cable 2>/dev/null || true
 fi
 
 exec "${@}"
