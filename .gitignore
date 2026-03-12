@@ -42,3 +42,4 @@ node_modules
 .claude/settings.local.json
 /public/vite-dev/
 /public/vite-test/
+/public/vite/

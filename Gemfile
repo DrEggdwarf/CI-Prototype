@@ -26,6 +26,9 @@ gem "bootsnap", require: false
 # Inertia.js adapter for Rails
 gem "inertia_rails"
 
+# Authentication
+gem "devise"
+
 # Vite integration for Rails
 gem "vite_rails"
 

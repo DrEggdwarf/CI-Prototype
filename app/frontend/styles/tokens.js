@@ -1,104 +1,72 @@
 /**
  * Design Tokens — source de vérité pour tous les styles
  *
- * Usage dans un composant :
- *   import { colors, spacing, typography } from "../styles/tokens";
- *   style={{ color: colors.primary, padding: spacing[4] }}
+ * Aligné sur la charte graphique CI Dashboard.
  *
- * Modifier ces valeurs pour adapter le design à votre projet.
+ * Usage dans un composant :
+ *   import { colors, fonts, radii } from "../styles/tokens";
+ *   style={{ color: colors.text, fontFamily: fonts.outfit }}
  */
 
 export const colors = {
-  // Marque — à personnaliser
-  primary: "#16213e",
-  primaryLight: "#1a2a50",
-  primaryDark: "#0d1526",
-  accent: "#0a9396",
-  accentLight: "#94d2bd",
-
-  // Sémantiques
-  success: "#2a9d8f",
-  warning: "#e9c46a",
-  error: "#e76f51",
-  info: "#457b9d",
-
-  // Neutres
-  white: "#ffffff",
-  black: "#000000",
-  gray: {
-    50: "#f8f9fa",
-    100: "#f1f3f5",
-    200: "#e9ecef",
-    300: "#dee2e6",
-    400: "#ced4da",
-    500: "#adb5bd",
-    600: "#868e96",
-    700: "#495057",
-    800: "#343a40",
-    900: "#212529",
-  },
-
-  // Texte
-  text: {
-    primary: "#1a1a2e",
-    secondary: "#495057",
-    muted: "#868e96",
-    inverse: "#ffffff",
-  },
-
-  // Fonds
-  bg: {
-    page: "#ffffff",
-    subtle: "#f8f9fa",
-    muted: "#f1f3f5",
-  },
+  // Surfaces
+  bg: "#eef0f6",
+  s1: "#ffffff",
+  s2: "#f5f6fa",
+  s3: "#eceef5",
 
   // Bordures
-  border: {
-    light: "#e9ecef",
-    default: "#dee2e6",
-    strong: "#adb5bd",
+  border: "#e0e4ef",
+  border2: "#c8cedc",
+
+  // Texte
+  text: "#16213a",
+  text2: "#5a6a85",
+  text3: "#9aaabe",
+
+  // Sémantiques — sévérité
+  critical: "#dc2626",
+  high: "#ea6c10",
+  medium: "#b58a00",
+  low: "#16a34a",
+
+  // IA
+  ai: "#7c3aed",
+  ai2: "#6d28d9",
+
+  // Accent
+  accent: "#2563eb",
+
+  // Domaines métier CI (pour badges, tags, etc.)
+  domains: {
+    finance: "#2563eb",
+    it: "#7c3aed",
+    rh: "#0891b2",
+    achats: "#d97706",
+    logistique: "#db2777",
+    juridique: "#059669",
   },
 };
 
-export const typography = {
-  // Familles
-  fontFamily: {
-    sans: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
-    mono: "'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace",
-  },
-
-  // Tailles (rem)
-  fontSize: {
-    xs: "0.75rem",    // 12px
-    sm: "0.875rem",   // 14px
-    base: "1rem",     // 16px
-    lg: "1.125rem",   // 18px
-    xl: "1.25rem",    // 20px
-    "2xl": "1.5rem",  // 24px
-    "3xl": "1.875rem",// 30px
-    "4xl": "2.25rem", // 36px
-  },
-
-  // Graisses
-  fontWeight: {
-    normal: 400,
-    medium: 500,
-    semibold: 600,
-    bold: 700,
-  },
-
-  // Hauteurs de ligne
-  lineHeight: {
-    tight: 1.25,
-    snug: 1.375,
-    normal: 1.5,
-    relaxed: 1.625,
-    loose: 2,
-  },
+export const fonts = {
+  outfit: '"Outfit", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+  dmMono: '"DM Mono", "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace',
 };
 
-// Espacement — multiples de 4px
+export const radii = {
+  card: "7px",
+  button: "6px",
+  pill: "20px",
+  avatar: "50%",
+};
+
+export const shadows = {
+  none: "none",
+  header: "0 1px 6px rgba(0,0,0,.06)",
+  card: "0 1px 3px rgba(0,0,0,.04)",
+  dropdown: "0 4px 12px rgba(0,0,0,.08)",
+};
+
 export const spacing = {
   0: "0",
   1: "0.25rem",  // 4px
@@ -111,25 +79,6 @@ export const spacing = {
   10: "2.5rem",  // 40px
   12: "3rem",    // 48px
   16: "4rem",    // 64px
-  20: "5rem",    // 80px
-  24: "6rem",    // 96px
-};
-
-export const radii = {
-  none: "0",
-  sm: "0.25rem",
-  md: "0.5rem",
-  lg: "0.75rem",
-  xl: "1rem",
-  full: "9999px",
-};
-
-export const shadows = {
-  none: "none",
-  sm: "0 1px 2px 0 rgba(0,0,0,0.05)",
-  md: "0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06)",
-  lg: "0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05)",
-  xl: "0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04)",
 };
 
 export const breakpoints = {
@@ -137,7 +86,6 @@ export const breakpoints = {
   md: "768px",
   lg: "1024px",
   xl: "1280px",
-  "2xl": "1536px",
 };
 
 export const zIndex = {
@@ -150,5 +98,5 @@ export const zIndex = {
 };
 
 // Export groupé pour import unique
-const tokens = { colors, typography, spacing, radii, shadows, breakpoints, zIndex };
+const tokens = { colors, fonts, radii, shadows, spacing, breakpoints, zIndex };
 export default tokens;
