@@ -43,3 +43,4 @@ node_modules
 /public/vite-dev/
 /public/vite-test/
 /public/vite/
+.github/workflows/ci.yml
