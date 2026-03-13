@@ -215,3 +215,55 @@
   - Admin → Dashboard + Settings + tous Workspaces. Membre → son Workspace uniquement
   - Login page sans AppLayout, POST Inertia pour CSRF
 - **Statut** : Terminé
+
+## Sprint 2026-03-13 — Sprint 8 : Dock Bar, i18n complet, UX Polish, Documents & News
+
+- **Tickets** : 14+ (dock bar, 7 modals, i18n FR/EN, sidebar icons, toolbar responsive, KPI fix, kanban collapse, DnD fix, documents, news, glassmorphisme)
+- **Agents utilisés** : @frontend x8 (parallèles), @backend x3, @database x2, @security, @architect, @quality, @testing, @a11y, @performance
+- **Fichiers créés** :
+  - app/frontend/components/shared/DockBar.jsx (dock macOS avec effet CSS :has(), em units)
+  - app/frontend/components/dock/DockModal.jsx (modal portal générique)
+  - app/frontend/components/dock/ChatModal.jsx (chat équipe autonome)
+  - app/frontend/components/dock/AiModal.jsx (shell assistant IA)
+  - app/frontend/components/dock/TodoModal.jsx (todo list autonome)
+  - app/frontend/components/dock/ProfileModal.jsx (profil + préférences + stats)
+  - app/frontend/components/dock/EmailModal.jsx (générateur reporting mail, preview live)
+  - app/frontend/components/dock/DocumentsModal.jsx (cloud documents partagé)
+  - app/frontend/components/dock/NewsModal.jsx (flux actualité avec tags/filtres)
+  - app/models/document.rb + migration
+  - app/models/news_item.rb + migration
+  - app/controllers/api/documents_controller.rb
+  - app/controllers/api/news_items_controller.rb
+  - public/icons/ (8 PNG icons macOS style)
+- **Fichiers modifiés** :
+  - app/frontend/layouts/AppLayout.jsx (DockBar + DockModal, suppression AiChatFab)
+  - app/frontend/components/shared/Sidebar.jsx (Font Awesome icons, i18n)
+  - app/frontend/components/dashboard/Toolbar.jsx (responsive fix, glassmorphisme, i18n)
+  - app/frontend/components/dashboard/KpiBar.jsx (non-cliquable, i18n)
+  - app/frontend/components/dashboard/Kanban.jsx (typo augmentée, i18n)
+  - app/frontend/components/dashboard/SignalPanel.jsx (typo augmentée, i18n)
+  - app/frontend/components/dashboard/KanbanCard.jsx (i18n)
+  - app/frontend/components/dashboard/ControlModal.jsx (i18n)
+  - app/frontend/components/workspace/WorkspaceKanban.jsx (colonnes collapsibles, DnD fix, i18n)
+  - app/frontend/pages/Dashboard.jsx, Workspace.jsx, Settings.jsx, Auth/Login.jsx (i18n)
+  - app/frontend/components/settings/*.jsx (i18n)
+  - app/frontend/components/workspace/TodoPanel.jsx, TeamChatPanel.jsx (i18n)
+  - config/locales/fr.yml, config/locales/en.yml (~180 clés de traduction)
+  - config/routes.rb (documents, news_items)
+  - db/seeds.rb (documents, news_items)
+  - app/models/control.rb (ajout statut "in_progress")
+  - app/controllers/application_controller.rb (APP_LOCALE_KEYS étendu)
+- **Décisions prises** :
+  - Dock bar macOS remplace FAB IA — présent sur toutes les pages, drawer hover bottom
+  - Chaque item du dock ouvre un modal dédié (Chat, IA, Email, Documents, Todo, Actualité, Profil, Paramètres)
+  - Email modal = générateur de rapport avec preview live HTML
+  - Documents = cloud partagé avec filtres type, lien contrôle
+  - News = flux RSS interne avec catégories et tags
+  - i18n complet FR/EN sur toutes les pages
+  - Toolbar dashboard : glassmorphisme
+  - Dock : zone hover étendue (70px) pour meilleure ergonomie
+- **Bugs résolus** :
+  - DnD Workspace kanban : targetStatus dupliqué → ajout statut "in_progress"
+  - Security : uploaded_by_id mass-assignment → forcé à current_member.id
+  - i18n Login : translations vides → passage via sessions_controller + fallbacks
+- **Statut** : Terminé

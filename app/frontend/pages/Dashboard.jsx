@@ -3,6 +3,7 @@ import { router } from "@inertiajs/react";
 import { colors, fonts, radii } from "../styles/tokens";
 import { useFilters } from "../lib/useFilters";
 import { useToast } from "../lib/useToast";
+import { useTranslation } from "../lib/useTranslation";
 import KpiBar from "../components/dashboard/KpiBar";
 import Toolbar from "../components/dashboard/Toolbar";
 import Timeline from "../components/dashboard/Timeline";
@@ -10,6 +11,7 @@ import Kanban from "../components/dashboard/Kanban";
 import ControlModal from "../components/dashboard/ControlModal";
 
 export default function Dashboard({ controls = [], members = [], signals = [], picks = [] }) {
+  const { t } = useTranslation();
   const filters = useFilters();
   const filteredControls = filters.filterControls(controls);
   const toast = useToast();
@@ -52,10 +54,10 @@ export default function Dashboard({ controls = [], members = [], signals = [], p
       .then((res) => {
         if (!res.ok) throw new Error(`Assign failed (${res.status})`);
         const memberName = member ? member.name : `#${memberId}`;
-        toast.addToast(`Contrôle assigné à ${memberName}`, { type: "success" });
+        toast.addToast(t("dashboard.modal.assigned_to", { name: memberName }), { type: "success" });
         if (loadPct > 80) {
           toast.addToast(
-            `Attention : ${memberName} est à ${loadPct}% de charge`,
+            t("dashboard.modal.assign_warning", { name: memberName, load: loadPct }),
             { type: "warning", duration: 6000 },
           );
         }
@@ -63,7 +65,7 @@ export default function Dashboard({ controls = [], members = [], signals = [], p
       })
       .catch((err) => {
         console.error("handleAssign error:", err);
-        toast.addToast("Impossible d'assigner le contrôle", { type: "error" });
+        toast.addToast(t("dashboard.modal.assign_error"), { type: "error" });
       });
   }, [workloadByMember, members, toast]);
 
@@ -151,9 +153,9 @@ export default function Dashboard({ controls = [], members = [], signals = [], p
           }}
         >
           <div style={styles.panelHeader}>
-            <span style={styles.sectionLabel}>Timeline</span>
+            <span style={styles.sectionLabel}>{t("dashboard.timeline.title")}</span>
             <span style={styles.panelCount}>
-              {filteredControls.length} contrôles
+              {t("dashboard.timeline.controls_count", { count: filteredControls.length })}
             </span>
           </div>
           <Timeline

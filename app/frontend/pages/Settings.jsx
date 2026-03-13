@@ -1,14 +1,9 @@
 import { useState } from "react";
 import { colors, fonts, radii } from "../styles/tokens";
+import { useTranslation } from "../lib/useTranslation";
 import MembersTab from "../components/settings/MembersTab";
 import ControlsTab from "../components/settings/ControlsTab";
 import DomainsTab from "../components/settings/DomainsTab";
-
-const TABS = [
-  { key: "members", label: "Membres" },
-  { key: "controls", label: "Controles" },
-  { key: "domains", label: "Domaines" },
-];
 
 export default function Settings({ members: rawMembers, controls: rawControls, domains: rawDomains, todos: rawTodos }) {
   const members = Array.isArray(rawMembers) ? rawMembers : [];
@@ -16,12 +11,19 @@ export default function Settings({ members: rawMembers, controls: rawControls, d
   const domains = Array.isArray(rawDomains) ? rawDomains : [];
   const todos = Array.isArray(rawTodos) ? rawTodos : [];
   const [activeTab, setActiveTab] = useState("members");
+  const { t } = useTranslation();
+
+  const TABS = [
+    { key: "members", label: t("settings.tabs.members") },
+    { key: "controls", label: t("settings.tabs.controls") },
+    { key: "domains", label: t("settings.tabs.domains") },
+  ];
 
   return (
     <div style={styles.page}>
       {/* Header */}
       <div style={styles.header}>
-        <h1 style={styles.title}>Parametres</h1>
+        <h1 style={styles.title}>{t("nav.settings")}</h1>
       </div>
 
       {/* Tabs */}

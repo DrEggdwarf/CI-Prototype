@@ -1,6 +1,9 @@
 import { useState, useEffect } from "react";
 import { Link, usePage, router } from "@inertiajs/react";
 import { colors, fonts, radii, shadows, zIndex } from "../../styles/tokens";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faGauge, faBriefcase, faGear, faRightFromBracket, faChevronLeft, faChevronRight } from "@fortawesome/free-solid-svg-icons";
+import { useTranslation } from "../../lib/useTranslation";
 
 const COLLAPSED_WIDTH = 60;
 const EXPANDED_WIDTH = 220;
@@ -21,6 +24,7 @@ export default function Sidebar() {
   const isAdmin = props.is_admin;
   const locale = props.locale;
   const availableLocales = props.available_locales || ["fr", "en"];
+  const { t } = useTranslation();
 
   const [collapsed, setCollapsed] = useState(getInitialCollapsed);
   const [hoveredLink, setHoveredLink] = useState(null);
@@ -41,16 +45,16 @@ export default function Sidebar() {
 
   const navLinks = [];
   if (isAdmin) {
-    navLinks.push({ key: "dashboard", label: "Dashboard", href: "/", icon: "\u25EB" });
+    navLinks.push({ key: "dashboard", label: t("nav.dashboard"), href: "/", icon: faGauge });
   }
   navLinks.push({
     key: "workspace",
-    label: "Mon espace",
+    label: t("nav.workspace"),
     href: `/workspace/${memberId}`,
-    icon: "\u25A3",
+    icon: faBriefcase,
   });
   if (isAdmin) {
-    navLinks.push({ key: "settings", label: "Param\u00E8tres", href: "/settings", icon: "\u2699" });
+    navLinks.push({ key: "settings", label: t("nav.settings"), href: "/settings", icon: faGear });
   }
 
   function isActive(href) {
@@ -80,7 +84,7 @@ export default function Sidebar() {
       <div style={s.header}>
         {!collapsed && (
           <Link href="/" style={s.logo}>
-            CI Dashboard
+            {t("nav.app_name")}
           </Link>
         )}
         {collapsed && (
@@ -91,10 +95,10 @@ export default function Sidebar() {
         <button
           onClick={() => setCollapsed((c) => !c)}
           style={s.collapseBtn}
-          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          title={collapsed ? "Expand" : "Collapse"}
+          aria-label={collapsed ? t("nav.expand") : t("nav.collapse")}
+          title={collapsed ? t("nav.expand") : t("nav.collapse")}
         >
-          {collapsed ? "\u25B7" : "\u25C1"}
+          <FontAwesomeIcon icon={collapsed ? faChevronRight : faChevronLeft} />
         </button>
       </div>
 
@@ -119,7 +123,7 @@ export default function Sidebar() {
                 title={collapsed ? label : undefined}
               >
                 {active && <div style={s.activeBar} />}
-                <span style={s.navIcon}>{icon}</span>
+                <FontAwesomeIcon icon={icon} style={s.navIcon} />
                 {!collapsed && <span style={s.navLabel}>{label}</span>}
               </Link>
               {/* Tooltip when collapsed and hovered */}
@@ -185,11 +189,11 @@ export default function Sidebar() {
           }}
           onMouseEnter={() => setHoveredLogout(true)}
           onMouseLeave={() => setHoveredLogout(false)}
-          title={collapsed ? "D\u00E9connexion" : undefined}
-          aria-label="D\u00E9connexion"
+          title={collapsed ? t("nav.logout") : undefined}
+          aria-label={t("nav.logout")}
         >
-          <span style={s.logoutIcon}>{"\u21AA"}</span>
-          {!collapsed && <span>D\u00E9connexion</span>}
+          <FontAwesomeIcon icon={faRightFromBracket} style={s.logoutIcon} />
+          {!collapsed && <span>{t("nav.logout")}</span>}
         </button>
       </div>
     </aside>
@@ -289,11 +293,9 @@ const s = {
     backgroundColor: colors.accent,
   },
   navIcon: {
-    fontSize: 16,
-    lineHeight: 1,
+    fontSize: 15,
     flexShrink: 0,
-    width: 20,
-    textAlign: "center",
+    width: 16,
   },
   navLabel: {
     overflow: "hidden",
@@ -414,10 +416,8 @@ const s = {
     color: colors.text,
   },
   logoutIcon: {
-    fontSize: 16,
-    lineHeight: 1,
+    fontSize: 15,
     flexShrink: 0,
-    width: 20,
-    textAlign: "center",
+    width: 16,
   },
 };

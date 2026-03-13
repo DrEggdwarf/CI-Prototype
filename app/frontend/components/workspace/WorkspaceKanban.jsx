@@ -2,17 +2,11 @@ import { useState, useCallback, useMemo } from "react";
 import { router } from "@inertiajs/react";
 import { colors, fonts, radii } from "../../styles/tokens";
 import { useToast } from "../../lib/useToast";
+import { useTranslation } from "../../lib/useTranslation";
 
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
-
-const CRIT_LABELS = {
-  critical: "Critique",
-  high: "\u00c9lev\u00e9",
-  medium: "Moyen",
-  low: "Faible",
-};
 
 const CRIT_STRIPE = {
   critical: "#dc2626",
@@ -28,31 +22,9 @@ const CRIT_BADGE = {
   low: { background: "#f0fdf4", color: "#15803d" },
 };
 
-const DOMAIN_LABELS = {
-  finance: "Finance",
-  it: "IT",
-  rh: "RH",
-  achats: "Achats",
-  logistique: "Logistique",
-  juridique: "Juridique",
-};
-
 const MONTH_SHORT_FR = [
   "janv.", "f\u00e9vr.", "mars", "avr.", "mai", "juin",
   "juil.", "ao\u00fbt", "sept.", "oct.", "nov.", "d\u00e9c.",
-];
-
-const COLUMN_DEFS = [
-  { key: "pending", label: "ASSIGN\u00c9 \u00c0 MOI", accentColor: colors.accent, targetStatus: "pending" },
-  { key: "overdue", label: "EN COURS", accentColor: colors.critical, targetStatus: "pending" },
-  { key: "done", label: "COMPL\u00c9T\u00c9S", accentColor: colors.low, targetStatus: "done" },
-];
-
-const CRIT_FILTER_OPTIONS = [
-  { key: "critical", label: "Crit.", color: "#dc2626" },
-  { key: "high", label: "\u00c9lev.", color: "#ea6c10" },
-  { key: "medium", label: "Moy.", color: "#b58a00" },
-  { key: "low", label: "Faib.", color: "#16a34a" },
 ];
 
 const ALL_CRITS = ["critical", "high", "medium", "low"];
@@ -60,7 +32,7 @@ const ALL_CRITS = ["critical", "high", "medium", "low"];
 function makeInitialFilters() {
   return {
     pending: { search: "", criticalities: new Set(ALL_CRITS) },
-    overdue: { search: "", criticalities: new Set(ALL_CRITS) },
+    in_progress: { search: "", criticalities: new Set(ALL_CRITS) },
     done: { search: "", criticalities: new Set(ALL_CRITS) },
   };
 }
@@ -96,7 +68,7 @@ function CountBadge({ count }) {
   );
 }
 
-function ColumnFilterBar({ filters, onChange }) {
+function ColumnFilterBar({ filters, onChange, filterPlaceholder, resetTitle, critFilterOptions }) {
   const hasFilter =
     filters.search.trim() !== "" || filters.criticalities.size < ALL_CRITS.length;
 
@@ -114,13 +86,13 @@ function ColumnFilterBar({ filters, onChange }) {
     <div style={styles.filterBar}>
       <input
         type="text"
-        placeholder="Filtrer..."
+        placeholder={filterPlaceholder}
         value={filters.search}
         onChange={(e) => onChange({ ...filters, search: e.target.value })}
         style={styles.filterInput}
       />
       <div style={styles.filterChips}>
-        {CRIT_FILTER_OPTIONS.map(({ key, label, color }) => {
+        {critFilterOptions.map(({ key, label, color }) => {
           const active = filters.criticalities.has(key);
           return (
             <button
@@ -147,7 +119,7 @@ function ColumnFilterBar({ filters, onChange }) {
             onChange({ search: "", criticalities: new Set(ALL_CRITS) })
           }
           style={styles.filterClear}
-          title="R\u00e9initialiser"
+          title={resetTitle}
         >
           {"\u2715"}
         </button>
@@ -156,7 +128,7 @@ function ColumnFilterBar({ filters, onChange }) {
   );
 }
 
-function KanbanCard({ control, onMarkDone, onClick, draggable }) {
+function KanbanCard({ control, onMarkDone, onClick, draggable, critLabels, domainLabels, markDoneLabel }) {
   const [hovered, setHovered] = useState(false);
   const [marking, setMarking] = useState(false);
 
@@ -242,12 +214,12 @@ function KanbanCard({ control, onMarkDone, onClick, draggable }) {
             color: critBadge.color,
           }}
         >
-          {CRIT_LABELS[crit] || crit}
+          {critLabels[crit] || crit}
         </span>
 
-        {control.domain && DOMAIN_LABELS[control.domain] && (
+        {control.domain && domainLabels[control.domain] && (
           <span style={styles.badgeDomain}>
-            {DOMAIN_LABELS[control.domain]}
+            {domainLabels[control.domain]}
           </span>
         )}
       </div>
@@ -276,7 +248,7 @@ function KanbanCard({ control, onMarkDone, onClick, draggable }) {
               cursor: marking ? "default" : "pointer",
             }}
           >
-            {marking ? "..." : "Terminer"}
+            {marking ? "..." : markDoneLabel}
           </button>
         )}
       </div>
@@ -290,8 +262,53 @@ function KanbanCard({ control, onMarkDone, onClick, draggable }) {
 
 export default function WorkspaceKanban({ controls = [], onControlClick }) {
   const toast = useToast();
+  const { t } = useTranslation();
+
+  // Dynamic constants (depend on translations)
+  const COLUMN_DEFS = [
+    { key: "pending", label: t("workspace.columns.assigned_to_me"), accentColor: colors.accent, targetStatus: "pending" },
+    { key: "in_progress", label: t("workspace.columns.in_progress"), accentColor: "#d97706", targetStatus: "in_progress" },
+    { key: "done", label: t("workspace.columns.completed"), accentColor: colors.low, targetStatus: "done" },
+  ];
+
+  const CRIT_LABELS = {
+    critical: t("criticality.critical"),
+    high: t("criticality.high"),
+    medium: t("criticality.medium"),
+    low: t("criticality.low"),
+  };
+
+  const CRIT_FILTER_OPTIONS = [
+    { key: "critical", label: t("criticality.critical_short"), color: "#dc2626" },
+    { key: "high", label: t("criticality.high_short"), color: "#ea6c10" },
+    { key: "medium", label: t("criticality.medium_short"), color: "#b58a00" },
+    { key: "low", label: t("criticality.low_short"), color: "#16a34a" },
+  ];
+
+  const DOMAIN_LABELS = {
+    finance: t("domains.finance"),
+    it: t("domains.it"),
+    rh: t("domains.rh"),
+    achats: t("domains.achats"),
+    logistique: t("domains.logistique"),
+    juridique: t("domains.juridique"),
+  };
+
   const [dragOverCol, setDragOverCol] = useState(null);
   const [columnFilters, setColumnFilters] = useState(makeInitialFilters);
+  const [collapsedColumns, setCollapsedColumns] = useState(() => new Set());
+
+  const toggleColumn = useCallback((columnKey) => {
+    setCollapsedColumns((prev) => {
+      const next = new Set(prev);
+      if (next.has(columnKey)) {
+        next.delete(columnKey);
+      } else {
+        next.add(columnKey);
+      }
+      return next;
+    });
+  }, []);
 
   const updateColumnFilter = useCallback((columnKey, newFilter) => {
     setColumnFilters((prev) => ({ ...prev, [columnKey]: newFilter }));
@@ -300,20 +317,21 @@ export default function WorkspaceKanban({ controls = [], onControlClick }) {
   // Partition controls into 3 columns
   const columns = useMemo(() => {
     const pending = [];
-    const overdue = [];
+    const in_progress = [];
     const done = [];
 
     for (const ctrl of controls) {
       if (ctrl.status === "done") {
         done.push(ctrl);
-      } else if (isOverdue(ctrl)) {
-        overdue.push(ctrl);
+      } else if (ctrl.status === "in_progress") {
+        in_progress.push(ctrl);
       } else {
+        // pending, overdue, and anything else → "ASSIGNÉ À MOI"
         pending.push(ctrl);
       }
     }
 
-    return { pending, overdue, done };
+    return { pending, in_progress, done };
   }, [controls]);
 
   // Apply per-column filters
@@ -333,13 +351,13 @@ export default function WorkspaceKanban({ controls = [], onControlClick }) {
 
   const filteredColumns = useMemo(() => ({
     pending: applyColumnFilter(columns.pending, "pending"),
-    overdue: applyColumnFilter(columns.overdue, "overdue"),
+    in_progress: applyColumnFilter(columns.in_progress, "in_progress"),
     done: applyColumnFilter(columns.done, "done"),
   }), [columns, applyColumnFilter]);
 
   const columnCounts = useMemo(() => ({
     pending: { filtered: filteredColumns.pending.length, total: columns.pending.length },
-    overdue: { filtered: filteredColumns.overdue.length, total: columns.overdue.length },
+    in_progress: { filtered: filteredColumns.in_progress.length, total: columns.in_progress.length },
     done: { filtered: filteredColumns.done.length, total: columns.done.length },
   }), [filteredColumns, columns]);
 
@@ -353,13 +371,12 @@ export default function WorkspaceKanban({ controls = [], onControlClick }) {
       })
         .then((res) => {
           if (!res.ok) throw new Error(`Erreur ${res.status}`);
-          const label = newStatus === "done" ? "termin\u00e9" : "mis \u00e0 jour";
-          toast.addToast(`Contr\u00f4le ${label}`, { type: "success" });
+          toast.addToast(newStatus === "done" ? t("dashboard.modal.control_done") : t("dashboard.modal.control_updated"), { type: "success" });
           router.reload();
         })
         .catch((err) => {
           console.error("Status update error:", err);
-          toast.addToast("Erreur lors de la mise \u00e0 jour", { type: "error" });
+          toast.addToast(t("dashboard.modal.update_error"), { type: "error" });
           onFinally?.();
         });
     },
@@ -406,6 +423,23 @@ export default function WorkspaceKanban({ controls = [], onControlClick }) {
         const items = filteredColumns[col.key] || [];
         const isDoneCol = col.key === "done";
         const isDropTarget = dragOverCol === col.key;
+        const isCollapsed = collapsedColumns.has(col.key);
+
+        if (isCollapsed) {
+          return (
+            <div
+              key={col.key}
+              style={styles.columnCollapsed}
+              onClick={() => toggleColumn(col.key)}
+            >
+              <div style={styles.columnHeaderCollapsed}>
+                <span style={styles.collapseChevron}>&#9658;</span>
+                <span style={styles.columnLabelCollapsed}>{col.label}</span>
+                <CountBadge count={columnCounts[col.key]} />
+              </div>
+            </div>
+          );
+        }
 
         return (
           <div
@@ -421,6 +455,14 @@ export default function WorkspaceKanban({ controls = [], onControlClick }) {
           >
             {/* Column header */}
             <div style={styles.columnHeader}>
+              <button
+                type="button"
+                onClick={() => toggleColumn(col.key)}
+                style={styles.collapseChevronBtn}
+                title="R\u00e9duire la colonne"
+              >
+                &#9660;
+              </button>
               <div
                 style={{
                   ...styles.columnDot,
@@ -435,13 +477,16 @@ export default function WorkspaceKanban({ controls = [], onControlClick }) {
             <ColumnFilterBar
               filters={columnFilters[col.key]}
               onChange={(f) => updateColumnFilter(col.key, f)}
+              filterPlaceholder={t("common.filter")}
+              resetTitle={t("common.reset")}
+              critFilterOptions={CRIT_FILTER_OPTIONS}
             />
 
             {/* Cards */}
             <div style={styles.columnBody}>
               {items.length === 0 ? (
                 <p style={styles.emptyMsg}>
-                  {isDropTarget ? "Glisser ici" : "Aucun contr\u00f4le"}
+                  {isDropTarget ? t("workspace.actions.drop_here") : t("workspace.actions.no_controls")}
                 </p>
               ) : (
                 items.map((ctrl) => (
@@ -451,6 +496,9 @@ export default function WorkspaceKanban({ controls = [], onControlClick }) {
                     onMarkDone={handleMarkDone}
                     onClick={onControlClick}
                     draggable={!isDoneCol}
+                    critLabels={CRIT_LABELS}
+                    domainLabels={DOMAIN_LABELS}
+                    markDoneLabel={t("workspace.actions.mark_done")}
                   />
                 ))
               )}
@@ -478,7 +526,7 @@ const styles = {
     alignItems: "stretch",
   },
 
-  // Column
+  // Column — expanded
   column: {
     display: "flex",
     flexDirection: "column",
@@ -489,7 +537,57 @@ const styles = {
     padding: 8,
     minWidth: 0,
     minHeight: 0,
-    transition: "border-color .15s ease, background-color .15s ease",
+    transition: "flex .3s ease, width .3s ease, min-width .3s ease, padding .3s ease, border-color .15s ease, background-color .15s ease",
+  },
+
+  // Column — collapsed
+  columnCollapsed: {
+    display: "flex",
+    flexDirection: "column",
+    backgroundColor: colors.s2,
+    border: `1px solid ${colors.border}`,
+    borderRadius: radii.card,
+    padding: "8px 4px",
+    width: 40,
+    minWidth: 40,
+    maxWidth: 40,
+    flexShrink: 0,
+    minHeight: 0,
+    overflow: "hidden",
+    cursor: "pointer",
+    transition: "flex .3s ease, width .3s ease, min-width .3s ease, padding .3s ease",
+  },
+
+  // Column header — collapsed (vertical text)
+  columnHeaderCollapsed: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: 6,
+    writingMode: "vertical-rl",
+    textOrientation: "mixed",
+    cursor: "pointer",
+    outline: "none",
+    userSelect: "none",
+    padding: "4px 0",
+  },
+
+  collapseChevron: {
+    fontFamily: fonts.outfit,
+    fontSize: 9,
+    color: colors.text3,
+    lineHeight: 1,
+    flexShrink: 0,
+  },
+
+  columnLabelCollapsed: {
+    fontFamily: fonts.outfit,
+    fontSize: 10,
+    fontWeight: 700,
+    textTransform: "uppercase",
+    letterSpacing: ".5px",
+    color: colors.text2,
+    whiteSpace: "nowrap",
   },
 
   columnDropTarget: {
@@ -497,7 +595,7 @@ const styles = {
     backgroundColor: "#f0fdf4",
   },
 
-  // Column header
+  // Column header — expanded
   columnHeader: {
     display: "flex",
     flexDirection: "row",
@@ -505,6 +603,19 @@ const styles = {
     gap: 6,
     marginBottom: 6,
     flexShrink: 0,
+  },
+
+  collapseChevronBtn: {
+    fontFamily: fonts.outfit,
+    fontSize: 9,
+    color: colors.text3,
+    background: "none",
+    border: "none",
+    cursor: "pointer",
+    padding: 0,
+    lineHeight: 1,
+    flexShrink: 0,
+    outline: "none",
   },
 
   columnDot: {

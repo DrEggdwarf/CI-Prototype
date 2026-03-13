@@ -1,10 +1,12 @@
 # Backlog
 
 ## À faire
-- [ ] **Connexion FAB IA à LLM** — Connecter le shell chat à une API LLM (Claude) avec contexte dashboard
+- [ ] **Connexion IA à LLM** — Connecter le modal IA du dock à Claude API avec contexte dashboard
 - [ ] **Questions de clôture IA** — Après finalisation d'un contrôle, questions contextuelles (§3.6)
-- [ ] **i18n dynamique** — Texte UI actuellement hardcodé FR, connecter au hook useTranslation
 - [ ] **KPI cliquables** — Chaque KPI filtre le dashboard au clic
+- [ ] **Upload fichiers réel** — Documents modal utilise un modèle DB, ajouter Active Storage pour les fichiers
+- [ ] **News items admin CRUD** — Permettre à l'admin de créer/éditer les articles actualité
+- [ ] **Email envoi réel** — Connecter le modal Email à Action Mailer pour envoi effectif
 
 ## Terminé
 - [x] **Workspace page complète** — Sprint 4 (v1), Sprint 6 (v2 : 4 panels grid)
@@ -17,6 +19,14 @@
 - [x] **Todo list** — Sprint 6 (modèle, API, workspace panel, settings admin)
 - [x] **Chat équipe** — Sprint 6 (ActionCable temps réel, workspace panel)
 - [x] **Authentification** — Sprint 7 (Devise, login/logout, rôles admin/membre, routes protégées)
+- [x] **Dock bar macOS** — Sprint 8 (remplace FAB, 8 items, drawer hover, effet :has())
+- [x] **Modals dock** — Sprint 8 (Chat, IA, Email reporting, Documents cloud, Todo, Actualité, Profil)
+- [x] **i18n complet FR/EN** — Sprint 8 (~180 clés, toutes les pages traduites)
+- [x] **Font Awesome sidebar** — Sprint 8
+- [x] **Kanban colonnes collapsibles** — Sprint 8 (Dashboard + Workspace)
+- [x] **DnD Workspace fix** — Sprint 8 (statut in_progress)
+- [x] **Documents & News modèles** — Sprint 8 (DB, API, seeds)
+- [x] **Glassmorphisme toolbar** — Sprint 8
 
 ## Idées / À explorer
 - [ ] Système de récurrence avancé pour les contrôles (cron-like, 1er lundi du mois, etc.)

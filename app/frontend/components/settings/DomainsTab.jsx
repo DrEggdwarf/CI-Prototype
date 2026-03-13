@@ -3,6 +3,7 @@ import ReactDOM from "react-dom";
 import { router } from "@inertiajs/react";
 import { colors, fonts, radii, shadows, zIndex } from "../../styles/tokens";
 import { useToast } from "../../lib/useToast";
+import { useTranslation } from "../../lib/useTranslation";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -107,6 +108,7 @@ function DomainCard({ domain, onEdit, onDelete }) {
 
 function DomainModal({ domain, onClose, onSave }) {
   const isEdit = !!domain;
+  const { t } = useTranslation();
   const panelRef = useRef(null);
   const [form, setForm] = useState(() => {
     if (domain) {
@@ -183,13 +185,13 @@ function DomainModal({ domain, onClose, onSave }) {
         {/* Header */}
         <div style={styles.modalHeader}>
           <span style={styles.modalTitle}>
-            {isEdit ? "Modifier le domaine" : "Ajouter un domaine"}
+            {isEdit ? t("settings.domains.title") : t("settings.domains.add")}
           </span>
           <button
             type="button"
             style={styles.closeBtn}
             onClick={onClose}
-            aria-label="Fermer"
+            aria-label={t("common.close")}
           >
             &#x2715;
           </button>
@@ -199,7 +201,7 @@ function DomainModal({ domain, onClose, onSave }) {
         <form onSubmit={handleSubmit} style={styles.modalBody}>
           {/* Name */}
           <label style={styles.label}>
-            <span style={styles.labelText}>Nom *</span>
+            <span style={styles.labelText}>{t("common.name")} *</span>
             <input
               type="text"
               required
@@ -213,7 +215,7 @@ function DomainModal({ domain, onClose, onSave }) {
           {/* Key */}
           <label style={styles.label}>
             <span style={styles.labelText}>
-              Cle technique *
+              {t("settings.domains.key")} *
               {isEdit && (
                 <span style={styles.readonlyHint}> (non modifiable)</span>
               )}
@@ -252,7 +254,7 @@ function DomainModal({ domain, onClose, onSave }) {
 
           {/* Description */}
           <label style={styles.label}>
-            <span style={styles.labelText}>Description</span>
+            <span style={styles.labelText}>{t("common.description")}</span>
             <textarea
               value={form.description}
               onChange={(e) => handleChange("description", e.target.value)}
@@ -281,7 +283,7 @@ function DomainModal({ domain, onClose, onSave }) {
               style={styles.cancelBtn}
               onClick={onClose}
             >
-              Annuler
+              {t("common.cancel")}
             </button>
             <button
               type="submit"
@@ -292,7 +294,7 @@ function DomainModal({ domain, onClose, onSave }) {
                 cursor: saving ? "wait" : "pointer",
               }}
             >
-              {saving ? "Enregistrement..." : isEdit ? "Mettre a jour" : "Creer"}
+              {saving ? t("common.loading") : isEdit ? t("common.save") : t("common.create")}
             </button>
           </div>
         </form>
@@ -310,6 +312,7 @@ function DomainModal({ domain, onClose, onSave }) {
 export default function DomainsTab({ domains: rawDomains = [] }) {
   const domains = Array.isArray(rawDomains) ? rawDomains : [];
   const toast = useToast();
+  const { t } = useTranslation();
   const [modalDomain, setModalDomain] = useState(null); // null = closed, {} = create, domain = edit
   const [modalOpen, setModalOpen] = useState(false);
 
@@ -338,13 +341,13 @@ export default function DomainsTab({ domains: rawDomains = [] }) {
       })
         .then((res) => {
           if (!res.ok) throw new Error(`Erreur ${res.status}`);
-          toast.addToast("Domaine cree avec succes", { type: "success" });
+          toast.addToast(t("dock.todo_modal.task_added"), { type: "success" });
           closeModal();
           router.reload();
         })
         .catch((err) => {
           console.error("Create domain error:", err);
-          toast.addToast("Impossible de creer le domaine", { type: "error" });
+          toast.addToast(t("dock.todo_modal.error_add"), { type: "error" });
           closeModal();
         });
     },
@@ -362,13 +365,13 @@ export default function DomainsTab({ domains: rawDomains = [] }) {
       })
         .then((res) => {
           if (!res.ok) throw new Error(`Erreur ${res.status}`);
-          toast.addToast("Domaine mis a jour", { type: "success" });
+          toast.addToast(t("dock.todo_modal.task_updated"), { type: "success" });
           closeModal();
           router.reload();
         })
         .catch((err) => {
           console.error("Update domain error:", err);
-          toast.addToast("Impossible de mettre a jour le domaine", { type: "error" });
+          toast.addToast(t("dock.todo_modal.error_update"), { type: "error" });
           closeModal();
         });
     },
@@ -397,12 +400,12 @@ export default function DomainsTab({ domains: rawDomains = [] }) {
             }
             throw new Error(message);
           }
-          toast.addToast("Domaine supprime", { type: "success" });
+          toast.addToast(t("dock.todo_modal.task_deleted"), { type: "success" });
           router.reload();
         })
         .catch((err) => {
           console.error("Delete domain error:", err);
-          toast.addToast(err.message || "Impossible de supprimer le domaine", {
+          toast.addToast(err.message || t("dock.todo_modal.error_delete"), {
             type: "error",
             duration: 6000,
           });
@@ -419,16 +422,16 @@ export default function DomainsTab({ domains: rawDomains = [] }) {
     <div style={styles.container}>
       {/* Header row */}
       <div style={styles.topBar}>
-        <span style={styles.heading}>Domaines</span>
+        <span style={styles.heading}>{t("settings.tabs.domains")}</span>
         <button type="button" style={styles.addBtn} onClick={openCreate}>
-          + Ajouter un domaine
+          + {t("settings.domains.add")}
         </button>
       </div>
 
       {/* Grid of cards */}
       {sorted.length === 0 ? (
         <div style={styles.empty}>
-          <span style={styles.emptyText}>Aucun domaine configure</span>
+          <span style={styles.emptyText}>{t("common.no_results")}</span>
         </div>
       ) : (
         <div style={styles.grid}>

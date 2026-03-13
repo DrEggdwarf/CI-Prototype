@@ -19,6 +19,8 @@ Rails.application.routes.draw do
     end
     resources :domains, only: [:index, :create, :update, :destroy]
     resources :team_messages, only: [:index, :create]
+    resources :documents, only: [:index, :create, :destroy]
+    resources :news_items, only: [:index]
   end
 
   get "up" => "rails/health#show", as: :rails_health_check

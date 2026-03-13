@@ -3,10 +3,10 @@ import { router } from "@inertiajs/react";
 import { colors, fonts, radii, shadows } from "../styles/tokens";
 import { useFilters } from "../lib/useFilters";
 import { useToast } from "../lib/useToast";
+import { useTranslation } from "../lib/useTranslation";
 import Toolbar from "../components/dashboard/Toolbar";
 import Timeline from "../components/dashboard/Timeline";
 import WorkspaceKanban from "../components/workspace/WorkspaceKanban";
-import WorkspaceFab from "../components/workspace/WorkspaceFab";
 import ControlModal from "../components/dashboard/ControlModal";
 
 // ---------------------------------------------------------------------------
@@ -24,6 +24,7 @@ export default function Workspace({
   const avatarColor = member.color || colors.accent;
   const charge = member.load ?? 0;
   const toast = useToast();
+  const { t } = useTranslation();
 
   // Modal state (click on timeline chip or kanban card)
   const [selectedControl, setSelectedControl] = useState(null);
@@ -104,15 +105,15 @@ export default function Workspace({
             {initials}
           </div>
           <div style={styles.memberText}>
-            <span style={styles.memberName}>{member.name || "Membre"}</span>
+            <span style={styles.memberName}>{member.name || t("settings.members.name")}</span>
             <span style={styles.memberRole}>{member.role || "--"}</span>
           </div>
         </div>
 
         <div style={styles.headerRight}>
-          <StatBadge label="Assign\u00e9s" value={stats.total} />
-          <StatBadge label="En retard" value={stats.overdue} accent={stats.overdue > 0 ? colors.critical : undefined} />
-          <StatBadge label="Compl\u00e9t\u00e9s" value={stats.done} accent={stats.done > 0 ? colors.low : undefined} />
+          <StatBadge label={t("workspace.assigned")} value={stats.total} />
+          <StatBadge label={t("workspace.overdue")} value={stats.overdue} accent={stats.overdue > 0 ? colors.critical : undefined} />
+          <StatBadge label={t("workspace.completed")} value={stats.done} accent={stats.done > 0 ? colors.low : undefined} />
 
           <div style={styles.chargeWrapper}>
             <div style={styles.chargeTrack}>
@@ -164,9 +165,9 @@ export default function Workspace({
           }}
         >
           <div style={styles.panelHeader}>
-            <span style={styles.panelTitle}>Timeline</span>
+            <span style={styles.panelTitle}>{t("dashboard.timeline.title")}</span>
             <span style={styles.panelCount}>
-              {filteredControls.length} {filteredControls.length > 1 ? "contr\u00f4les" : "contr\u00f4le"}
+              {filteredControls.length} {filteredControls.length > 1 ? t("common.controls") : t("common.control")}
             </span>
           </div>
           <Timeline
@@ -196,15 +197,6 @@ export default function Workspace({
           />
         </div>
       </div>
-
-      {/* FAB with expandable bubbles */}
-      <WorkspaceFab
-        todos={todos}
-        memberId={member.id}
-        teamMessages={team_messages}
-        currentMemberId={member.id}
-        allMembers={all_members}
-      />
 
       {/* Control detail modal */}
       <ControlModal

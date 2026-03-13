@@ -1,5 +1,6 @@
 import { useState, useCallback, useMemo } from "react";
 import { colors, fonts, radii } from "../../styles/tokens";
+import { useTranslation } from "../../lib/useTranslation";
 import KanbanCard from "./KanbanCard";
 import SignalPanel from "./SignalPanel";
 
@@ -24,20 +25,9 @@ function hexToRgba(hex, alpha) {
   return `rgba(${r},${g},${b},${alpha})`;
 }
 
-// Column config — defines label, flex, variant, and a key for the collapse state
-const COLUMN_DEFS = [
-  { key: "unassigned", label: "À ASSIGNER", flex: 1.1, variant: "default", filterable: true },
-  { key: "inProgress", label: "EN COURS", flex: 2.2, variant: "default", filterable: true },
-  { key: "done", label: "COMPLÉTÉS", flex: 1, variant: "default", filterable: true },
-  { key: "picks", label: "PICKING IA", flex: 1.2, variant: "ai", filterable: false },
-];
-
-const CRIT_FILTER_OPTIONS = [
-  { key: "critical", label: "Crit.", color: "#dc2626" },
-  { key: "high", label: "Élev.", color: "#ea6c10" },
-  { key: "medium", label: "Moy.", color: "#b58a00" },
-  { key: "low", label: "Faib.", color: "#16a34a" },
-];
+// Column config and crit filter options are built dynamically inside the
+// component so that t() is available. The static shape is kept here for
+// reference only — actual arrays are created with useKanbanConfig() below.
 
 const ALL_CRITS = ["critical", "high", "medium", "low"];
 
@@ -62,7 +52,7 @@ function CountBadge({ count, variant = "default" }) {
     <span
       style={{
         fontFamily: fonts.dmMono,
-        fontSize: 9,
+        fontSize: 10,
         fontWeight: 700,
         backgroundColor: bg,
         color: fg,
@@ -135,7 +125,7 @@ function ColumnHeader({
 // ColumnFilterBar
 // ---------------------------------------------------------------------------
 
-function ColumnFilterBar({ filters, onChange }) {
+function ColumnFilterBar({ filters, onChange, critFilterOptions, filterPlaceholder, resetTitle }) {
   const hasFilter =
     filters.search.trim() !== "" || filters.criticalities.size < ALL_CRITS.length;
 
@@ -154,13 +144,13 @@ function ColumnFilterBar({ filters, onChange }) {
     <div style={styles.filterBar}>
       <input
         type="text"
-        placeholder="Filtrer..."
+        placeholder={filterPlaceholder}
         value={filters.search}
         onChange={(e) => onChange({ ...filters, search: e.target.value })}
         style={styles.filterInput}
       />
       <div style={styles.filterChips}>
-        {CRIT_FILTER_OPTIONS.map(({ key, label, color }) => {
+        {critFilterOptions.map(({ key, label, color }) => {
           const active = filters.criticalities.has(key);
           return (
             <button
@@ -187,7 +177,7 @@ function ColumnFilterBar({ filters, onChange }) {
             onChange({ search: "", criticalities: new Set(ALL_CRITS) })
           }
           style={styles.filterClear}
-          title="Réinitialiser les filtres"
+          title={resetTitle}
         >
           ✕
         </button>
@@ -207,6 +197,8 @@ function MemberDrawer({
   onToggle,
   onControlClick,
   onDrop,
+  noControlsLabel,
+  dropHereLabel,
 }) {
   const [dragOver, setDragOver] = useState(false);
 
@@ -328,7 +320,7 @@ function MemberDrawer({
       {isOpen && (
         <div style={styles.drawerContent}>
           {controls.length === 0 && !dragOver && (
-            <p style={styles.drawerEmpty}>Aucun contrôle assigné</p>
+            <p style={styles.drawerEmpty}>{noControlsLabel}</p>
           )}
           {controls.map((control) => (
             <KanbanCard
@@ -341,7 +333,7 @@ function MemberDrawer({
           ))}
           {dragOver && (
             <div style={styles.dropZone}>
-              ↓ Déposer ici
+              {dropHereLabel}
             </div>
           )}
         </div>
@@ -426,6 +418,24 @@ export default function Kanban({
   onControlClick,
   onAssign,
 }) {
+  const { t } = useTranslation();
+
+  // Dynamic column definitions (labels via i18n)
+  const columnDefs = [
+    { key: "unassigned", label: t("dashboard.kanban.to_assign"),  flex: 1.1, variant: "default", filterable: true },
+    { key: "inProgress", label: t("dashboard.kanban.in_progress"), flex: 2.2, variant: "default", filterable: true },
+    { key: "done",       label: t("dashboard.kanban.completed"),   flex: 1,   variant: "default", filterable: true },
+    { key: "picks",      label: t("dashboard.kanban.ai_picking"),  flex: 1.2, variant: "ai",      filterable: false },
+  ];
+
+  // Dynamic criticality filter chips
+  const critFilterOptions = [
+    { key: "critical", label: t("criticality.critical_short"), color: "#dc2626" },
+    { key: "high",     label: t("criticality.high_short"),     color: "#ea6c10" },
+    { key: "medium",   label: t("criticality.medium_short"),   color: "#b58a00" },
+    { key: "low",      label: t("criticality.low_short"),      color: "#16a34a" },
+  ];
+
   // Open drawers — first member open by default
   const [openDrawers, setOpenDrawers] = useState(() => {
     const initial = new Set();
@@ -485,20 +495,6 @@ export default function Kanban({
 
     return { unassigned, inProgress, done };
   }, [controls]);
-
-  // Controls grouped by member
-  const controlsByMember = useMemo(() => {
-    const map = {};
-    for (const m of members) {
-      map[m.id] = [];
-    }
-    for (const ctrl of inProgress) {
-      if (map[ctrl.assignee_id]) {
-        map[ctrl.assignee_id].push(ctrl);
-      }
-    }
-    return map;
-  }, [members, inProgress]);
 
   // Apply per-column filters
   const applyColumnFilter = useCallback((items, columnKey) => {
@@ -581,8 +577,8 @@ export default function Kanban({
         {filteredUnassigned.length === 0 ? (
           <p style={styles.emptyMsg}>
             {unassigned.length === 0
-              ? "Tous les contrôles sont assignés"
-              : "Aucun résultat pour ces filtres"}
+              ? t("dashboard.kanban.all_assigned")
+              : t("dashboard.kanban.no_filter_results")}
           </p>
         ) : (
           filteredUnassigned.map((ctrl) => (
@@ -608,6 +604,8 @@ export default function Kanban({
             onToggle={() => toggleDrawer(member.id)}
             onControlClick={onControlClick}
             onDrop={handleDrop}
+            noControlsLabel={t("dashboard.kanban.no_controls_assigned")}
+            dropHereLabel={t("dashboard.kanban.drop_here")}
           />
         ))}
       </>
@@ -615,7 +613,7 @@ export default function Kanban({
     done: (
       <>
         {filteredDone.length === 0 && done.length > 0 ? (
-          <p style={styles.emptyMsg}>Aucun résultat pour ces filtres</p>
+          <p style={styles.emptyMsg}>{t("dashboard.kanban.no_filter_results")}</p>
         ) : (
           filteredDone.map((ctrl) => (
             <KanbanCard
@@ -645,7 +643,7 @@ export default function Kanban({
 
   return (
     <div style={styles.board}>
-      {COLUMN_DEFS.map((col) => {
+      {columnDefs.map((col) => {
         const isCollapsed = collapsedColumns.has(col.key);
 
         if (isCollapsed) {
@@ -671,7 +669,7 @@ export default function Kanban({
             style={{
               ...styles.column,
               flex: col.flex,
-              transition: "flex .25s ease, width .25s ease, padding .25s ease",
+              transition: "flex .3s ease, width .3s ease, min-width .3s ease, padding .3s ease",
             }}
           >
             <ColumnHeader
@@ -685,6 +683,9 @@ export default function Kanban({
               <ColumnFilterBar
                 filters={columnFilters[col.key]}
                 onChange={(f) => updateColumnFilter(col.key, f)}
+                critFilterOptions={critFilterOptions}
+                filterPlaceholder={t("common.filter")}
+                resetTitle={t("common.reset")}
               />
             )}
             <div style={styles.columnBody}>
@@ -742,7 +743,7 @@ const styles = {
     flexShrink: 0,
     minHeight: 0,
     overflow: "hidden",
-    transition: "width .25s ease, padding .25s ease",
+    transition: "flex .3s ease, width .3s ease, min-width .3s ease, padding .3s ease",
     cursor: "pointer",
   },
 
@@ -783,7 +784,7 @@ const styles = {
 
   columnLabel: {
     fontFamily: fonts.outfit,
-    fontSize: 9,
+    fontSize: 10,
     fontWeight: 700,
     textTransform: "uppercase",
     letterSpacing: ".5px",
@@ -792,7 +793,7 @@ const styles = {
 
   columnLabelCollapsed: {
     fontFamily: fonts.outfit,
-    fontSize: 9,
+    fontSize: 10,
     fontWeight: 700,
     textTransform: "uppercase",
     letterSpacing: ".5px",
@@ -811,7 +812,7 @@ const styles = {
 
   emptyMsg: {
     fontFamily: fonts.outfit,
-    fontSize: 10,
+    fontSize: 11,
     color: colors.text3,
     textAlign: "center",
     margin: 0,
@@ -918,7 +919,7 @@ const styles = {
 
   drawerName: {
     fontFamily: fonts.outfit,
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: 600,
     color: colors.text,
     lineHeight: 1.2,
@@ -1041,7 +1042,7 @@ const styles = {
     backgroundColor: hexToRgba(colors.ai, 0.1),
     color: colors.ai,
     fontFamily: fonts.dmMono,
-    fontSize: 10,
+    fontSize: 12,
     fontWeight: 700,
     display: "flex",
     alignItems: "center",
@@ -1060,7 +1061,7 @@ const styles = {
 
   pickName: {
     fontFamily: fonts.outfit,
-    fontSize: 10,
+    fontSize: 12,
     fontWeight: 600,
     color: colors.text,
     lineHeight: 1.3,
@@ -1071,7 +1072,7 @@ const styles = {
 
   pickReason: {
     fontFamily: fonts.outfit,
-    fontSize: 9,
+    fontSize: 11,
     color: colors.text2,
     lineHeight: 1.3,
   },
@@ -1086,7 +1087,7 @@ const styles = {
 
   pickTag: {
     fontFamily: fonts.outfit,
-    fontSize: 8,
+    fontSize: 10,
     fontWeight: 600,
     textTransform: "uppercase",
     backgroundColor: hexToRgba(colors.ai, 0.1),

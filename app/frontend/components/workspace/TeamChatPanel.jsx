@@ -3,6 +3,7 @@ import { router } from "@inertiajs/react";
 import { createConsumer } from "@rails/actioncable";
 import { colors, fonts, radii } from "../../styles/tokens";
 import { useToast } from "../../lib/useToast";
+import { useTranslation } from "../../lib/useTranslation";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -21,7 +22,7 @@ function formatTime(dateStr) {
 }
 
 /** Return a day separator label for a given date. */
-function getDaySeparator(dateStr) {
+function getDaySeparator(dateStr, todayLabel, yesterdayLabel) {
   const d = new Date(dateStr);
   const now = new Date();
 
@@ -30,8 +31,8 @@ function getDaySeparator(dateStr) {
   const diffMs = today - target;
   const diffDays = Math.round(diffMs / 86400000);
 
-  if (diffDays === 0) return "Aujourd\u2019hui";
-  if (diffDays === 1) return "Hier";
+  if (diffDays === 0) return todayLabel;
+  if (diffDays === 1) return yesterdayLabel;
   return d.toLocaleDateString("fr-FR", {
     weekday: "long",
     day: "numeric",
@@ -40,7 +41,7 @@ function getDaySeparator(dateStr) {
 }
 
 /** Group messages by day for separator rendering. */
-function groupMessagesByDay(messages) {
+function groupMessagesByDay(messages, todayLabel, yesterdayLabel) {
   const groups = [];
   let currentDay = null;
 
@@ -50,7 +51,7 @@ function groupMessagesByDay(messages) {
 
     if (dayKey !== currentDay) {
       currentDay = dayKey;
-      groups.push({ type: "separator", label: getDaySeparator(msg.created_at), key: `sep-${dayKey}` });
+      groups.push({ type: "separator", label: getDaySeparator(msg.created_at, todayLabel, yesterdayLabel), key: `sep-${dayKey}` });
     }
     groups.push({ type: "message", data: msg, key: `msg-${msg.id}` });
   }
@@ -103,7 +104,7 @@ function DaySeparator({ label }) {
   );
 }
 
-function MessageBubble({ message, isMine }) {
+function MessageBubble({ message, isMine, unknownLabel }) {
   const member = message.member || {};
 
   return (
@@ -136,7 +137,7 @@ function MessageBubble({ message, isMine }) {
             flexDirection: isMine ? "row-reverse" : "row",
           }}
         >
-          <span style={styles.msgName}>{member.name || "Inconnu"}</span>
+          <span style={styles.msgName}>{member.name || unknownLabel}</span>
           <span style={styles.msgTime}>{formatTime(message.created_at)}</span>
         </div>
 
@@ -156,7 +157,7 @@ function MessageBubble({ message, isMine }) {
   );
 }
 
-function ConnectionIndicator({ connected }) {
+function ConnectionIndicator({ connected, connectedLabel, disconnectedLabel }) {
   return (
     <div
       style={{
@@ -166,7 +167,7 @@ function ConnectionIndicator({ connected }) {
         backgroundColor: connected ? "#16a34a" : "#dc2626",
         flexShrink: 0,
       }}
-      title={connected ? "Connect\u00E9" : "D\u00E9connect\u00E9"}
+      title={connected ? connectedLabel : disconnectedLabel}
     />
   );
 }
@@ -181,6 +182,7 @@ export default function TeamChatPanel({
   allMembers = [],
 }) {
   const toast = useToast();
+  const { t } = useTranslation();
   const [messages, setMessages] = useState(initialMessages);
   const [body, setBody] = useState("");
   const [connected, setConnected] = useState(false);
@@ -328,7 +330,7 @@ export default function TeamChatPanel({
       // The cable subscription will add the message; also reload for safety
       router.reload();
     } catch {
-      toast.addToast("Erreur lors de l\u2019envoi du message", { type: "error" });
+      toast.addToast(t("dock.chat_modal.send_error"), { type: "error" });
     } finally {
       setSending(false);
     }
@@ -347,22 +349,29 @@ export default function TeamChatPanel({
   // ---------------------------------------------------------------------------
   // Render
   // ---------------------------------------------------------------------------
-  const grouped = useMemo(() => groupMessagesByDay(messages), [messages]);
+  const grouped = useMemo(
+    () => groupMessagesByDay(messages, t("dock.chat_modal.today"), t("dock.chat_modal.yesterday")),
+    [messages, t],
+  );
 
   return (
     <div style={styles.container}>
       {/* Header */}
       <div style={styles.header}>
         <div style={styles.headerLeft}>
-          <span style={styles.headerTitle}>{"Chat d\u2019\u00e9quipe"}</span>
+          <span style={styles.headerTitle}>{t("dock.chat_modal.title")}</span>
         </div>
-        <ConnectionIndicator connected={connected} />
+        <ConnectionIndicator
+          connected={connected}
+          connectedLabel={t("dock.chat_modal.connected")}
+          disconnectedLabel={t("dock.chat_modal.disconnected")}
+        />
       </div>
 
       {/* Messages */}
       <div ref={messagesContainerRef} style={styles.messagesContainer}>
         {grouped.length === 0 ? (
-          <p style={styles.emptyText}>Aucun message pour le moment</p>
+          <p style={styles.emptyText}>{t("dock.chat_modal.no_messages")}</p>
         ) : (
           grouped.map((item) => {
             if (item.type === "separator") {
@@ -371,7 +380,12 @@ export default function TeamChatPanel({
             const msg = item.data;
             const isMine = msg.member?.id === currentMemberId;
             return (
-              <MessageBubble key={item.key} message={msg} isMine={isMine} />
+              <MessageBubble
+                key={item.key}
+                message={msg}
+                isMine={isMine}
+                unknownLabel="?"
+              />
             );
           })
         )}
@@ -384,7 +398,7 @@ export default function TeamChatPanel({
           value={body}
           onChange={(e) => setBody(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Votre message... (Ctrl+Entr\u00E9e pour envoyer)"
+          placeholder={t("dock.chat_modal.placeholder")}
           style={styles.textarea}
           rows={1}
         />

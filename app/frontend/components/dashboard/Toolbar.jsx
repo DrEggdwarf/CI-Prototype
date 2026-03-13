@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import { colors, fonts, radii } from "../../styles/tokens";
+import { useTranslation } from "../../lib/useTranslation";
 
 // ---------------------------------------------------------------------------
 // Domain config
@@ -14,22 +15,7 @@ const DOMAIN_COLORS = {
   juridique: "#059669",
 };
 
-const DOMAIN_LABELS = {
-  finance: "Finance",
-  it: "IT",
-  rh: "RH",
-  achats: "Achats",
-  logistique: "Logistique",
-  juridique: "Juridique",
-};
-
-const PERIOD_MODES = [
-  { key: "week", label: "Semaine" },
-  { key: "month", label: "Mois" },
-  { key: "quarter", label: "Trimestre" },
-];
-
-const DOMAINS = Object.keys(DOMAIN_LABELS);
+const DOMAINS = ["finance", "it", "rh", "achats", "logistique", "juridique"];
 
 // ---------------------------------------------------------------------------
 // Sub-components
@@ -48,13 +34,13 @@ function Divider() {
   );
 }
 
-function NavButton({ label, onClick }) {
+function NavButton({ label, ariaLabel, onClick }) {
   const [hovered, setHovered] = useState(false);
 
   return (
     <button
       type="button"
-      aria-label={label === "‹" ? "Période précédente" : "Période suivante"}
+      aria-label={ariaLabel}
       onClick={onClick}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
@@ -122,8 +108,26 @@ export default function Toolbar({
   hasActiveFilters,
   resetFilters,
 }) {
+  const { t } = useTranslation();
   const [searchFocused, setSearchFocused] = useState(false);
   const searchRef = useRef(null);
+
+  // Dynamic period modes (built inside component so t() is available)
+  const periodModes = [
+    { key: "week", label: t("dashboard.toolbar.week") },
+    { key: "month", label: t("dashboard.toolbar.month") },
+    { key: "quarter", label: t("dashboard.toolbar.quarter") },
+  ];
+
+  // Dynamic domain labels
+  const domainLabels = {
+    finance: t("domains.finance"),
+    it: t("domains.it"),
+    rh: t("domains.rh"),
+    achats: t("domains.achats"),
+    logistique: t("domains.logistique"),
+    juridique: t("domains.juridique"),
+  };
 
   // Custom date picker state
   const [customOpen, setCustomOpen] = useState(false);
@@ -154,13 +158,13 @@ export default function Toolbar({
     <div style={styles.bar}>
       {/* ---- 1. Sélecteur de période ---- */}
       <div style={styles.section}>
-        <NavButton label="‹" onClick={prev} />
+        <NavButton label="‹" ariaLabel={t("dashboard.toolbar.previous")} onClick={prev} />
 
         <span style={styles.periodLabel}>{periodLabel}</span>
 
-        <NavButton label="›" onClick={next} />
+        <NavButton label="›" ariaLabel={t("dashboard.toolbar.next")} onClick={next} />
 
-        {PERIOD_MODES.map(({ key, label }) => (
+        {periodModes.map(({ key, label }) => (
           <Chip
             key={key}
             label={label}
@@ -172,7 +176,7 @@ export default function Toolbar({
         ))}
 
         <Chip
-          label="Personnalisé"
+          label={t("dashboard.toolbar.custom")}
           active={periodMode === "custom"}
           activeBackground={colors.accent}
           activeBorder={colors.accent}
@@ -182,7 +186,7 @@ export default function Toolbar({
         {customOpen && (
           <div style={styles.customRangeForm}>
             <label style={styles.customLabel}>
-              Du
+              {t("common.from")}
               <input
                 type="date"
                 value={customStartInput}
@@ -191,7 +195,7 @@ export default function Toolbar({
               />
             </label>
             <label style={styles.customLabel}>
-              au
+              {t("common.to")}
               <input
                 type="date"
                 value={customEndInput}
@@ -208,13 +212,13 @@ export default function Toolbar({
                 opacity: !customStartInput || !customEndInput ? 0.5 : 1,
               }}
             >
-              Appliquer
+              {t("common.apply")}
             </button>
           </div>
         )}
 
         <button type="button" onClick={goToToday} style={styles.todayBtn}>
-          Aujourd'hui
+          {t("common.today")}
         </button>
       </div>
 
@@ -227,7 +231,7 @@ export default function Toolbar({
           return (
             <Chip
               key={domain}
-              label={DOMAIN_LABELS[domain]}
+              label={domainLabels[domain]}
               active={isActive}
               activeBackground={DOMAIN_COLORS[domain]}
               activeBorder={DOMAIN_COLORS[domain]}
@@ -242,14 +246,14 @@ export default function Toolbar({
       {/* ---- 3. Filtres spéciaux ---- */}
       <div style={styles.section}>
         <Chip
-          label="Critique"
+          label={t("criticality.critical")}
           active={criticalOnly}
           activeBackground={colors.critical}
           activeBorder={colors.critical}
           onClick={toggleCriticalOnly}
         />
         <Chip
-          label="En retard"
+          label={t("dashboard.kpi.overdue")}
           active={overdueOnly}
           activeBackground={colors.critical}
           activeBorder={colors.critical}
@@ -263,7 +267,7 @@ export default function Toolbar({
       <input
         ref={searchRef}
         type="text"
-        placeholder="Rechercher..."
+        placeholder={t("common.search")}
         value={searchQuery}
         onChange={(e) => setSearchQuery(e.target.value)}
         onFocus={() => setSearchFocused(true)}
@@ -277,7 +281,7 @@ export default function Toolbar({
       {/* ---- 5. Reset ---- */}
       {hasActiveFilters && (
         <button type="button" onClick={resetFilters} style={styles.resetBtn}>
-          ✕ Réinitialiser
+          ✕ {t("common.reset")}
         </button>
       )}
     </div>
@@ -290,15 +294,21 @@ export default function Toolbar({
 
 const styles = {
   bar: {
-    height: 42,
+    minHeight: 42,
+    height: "auto",
     flexShrink: 0,
-    backgroundColor: colors.s1,
-    border: `1px solid ${colors.border}`,
+    backgroundColor: "rgba(255, 255, 255, 0.45)",
+    backdropFilter: "blur(20px) saturate(180%)",
+    WebkitBackdropFilter: "blur(20px) saturate(180%)",
+    border: "1px solid rgba(255, 255, 255, 0.35)",
+    boxShadow: "0 4px 16px rgba(0, 0, 0, 0.04)",
     borderRadius: radii.card, // 7px
     padding: "0 16px",
     display: "flex",
     alignItems: "center",
     gap: 12,
+    flexWrap: "wrap",
+    overflow: "hidden",
   },
 
   section: {

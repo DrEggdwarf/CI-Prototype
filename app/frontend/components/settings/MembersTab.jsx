@@ -2,6 +2,7 @@ import { useState, useCallback } from "react";
 import { router } from "@inertiajs/react";
 import { colors, fonts, radii, shadows, zIndex } from "../../styles/tokens";
 import { useToast } from "../../lib/useToast";
+import { useTranslation } from "../../lib/useTranslation";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -15,18 +16,19 @@ const PRIORITY_COLORS = {
   low: colors.low,
 };
 
-const PRIORITY_LABELS = {
-  high: "Haute",
-  medium: "Moyenne",
-  low: "Basse",
-};
-
 // ---------------------------------------------------------------------------
 // MembersTab
 // ---------------------------------------------------------------------------
 
 export default function MembersTab({ members = [], todos = [] }) {
   const toast = useToast();
+  const { t } = useTranslation();
+
+  const PRIORITY_LABELS = {
+    high: t("dock.todo_modal.priority.high"),
+    medium: t("dock.todo_modal.priority.medium"),
+    low: t("dock.todo_modal.priority.low"),
+  };
   const [modalOpen, setModalOpen] = useState(false);
   const [editingMember, setEditingMember] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -65,11 +67,11 @@ export default function MembersTab({ members = [], todos = [] }) {
       fetch(`/api/members/${member.id}`, { method: "DELETE" })
         .then((res) => {
           if (!res.ok) throw new Error(`Delete failed (${res.status})`);
-          toast.addToast("Membre supprime", { type: "success" });
+          toast.addToast(t("dock.todo_modal.task_deleted"), { type: "success" });
           router.reload();
         })
         .catch(() => {
-          toast.addToast("Erreur lors de la suppression", { type: "error" });
+          toast.addToast(t("dock.todo_modal.error_delete"), { type: "error" });
         })
         .finally(() => setLoading(false));
     },
@@ -92,14 +94,14 @@ export default function MembersTab({ members = [], todos = [] }) {
       })
         .then((res) => {
           if (!res.ok) throw new Error(`Save failed (${res.status})`);
-          toast.addToast(isEdit ? "Membre mis a jour" : "Membre cree", {
+          toast.addToast(isEdit ? t("dock.todo_modal.task_updated") : t("dock.todo_modal.task_added"), {
             type: "success",
           });
           closeModal();
           router.reload();
         })
         .catch(() => {
-          toast.addToast("Erreur lors de l'enregistrement", { type: "error" });
+          toast.addToast(t("dock.todo_modal.error_update"), { type: "error" });
         })
         .finally(() => setLoading(false));
     },
@@ -118,11 +120,11 @@ export default function MembersTab({ members = [], todos = [] }) {
       })
         .then((res) => {
           if (!res.ok) throw new Error(`Create todo failed (${res.status})`);
-          toast.addToast("Tache ajoutee", { type: "success" });
+          toast.addToast(t("dock.todo_modal.task_added"), { type: "success" });
           router.reload();
         })
         .catch(() => {
-          toast.addToast("Erreur lors de l'ajout", { type: "error" });
+          toast.addToast(t("dock.todo_modal.error_add"), { type: "error" });
         })
         .finally(() => setLoading(false));
     },
@@ -140,13 +142,13 @@ export default function MembersTab({ members = [], todos = [] }) {
         .then((res) => {
           if (!res.ok) throw new Error(`Toggle todo failed (${res.status})`);
           toast.addToast(
-            todo.completed ? "Tache rouverte" : "Tache terminee",
+            todo.completed ? t("dock.todo_modal.task_reactivated") : t("dock.todo_modal.task_done"),
             { type: "success" },
           );
           router.reload();
         })
         .catch(() => {
-          toast.addToast("Erreur lors de la mise a jour", { type: "error" });
+          toast.addToast(t("dock.todo_modal.error_update"), { type: "error" });
         })
         .finally(() => setLoading(false));
     },
@@ -161,11 +163,11 @@ export default function MembersTab({ members = [], todos = [] }) {
       fetch(`/api/members/${memberId}/todos/${todoId}`, { method: "DELETE" })
         .then((res) => {
           if (!res.ok) throw new Error(`Delete todo failed (${res.status})`);
-          toast.addToast("Tache supprimee", { type: "success" });
+          toast.addToast(t("dock.todo_modal.task_deleted"), { type: "success" });
           router.reload();
         })
         .catch(() => {
-          toast.addToast("Erreur lors de la suppression", { type: "error" });
+          toast.addToast(t("dock.todo_modal.error_delete"), { type: "error" });
         })
         .finally(() => setLoading(false));
     },
@@ -179,7 +181,7 @@ export default function MembersTab({ members = [], todos = [] }) {
       {/* Toolbar */}
       <div style={styles.toolbar}>
         <div style={styles.toolbarLeft}>
-          <span style={styles.sectionLabel}>Equipe</span>
+          <span style={styles.sectionLabel}>{t("settings.tabs.members")}</span>
           <span style={styles.countBadge}>{members.length}</span>
         </div>
         <button
@@ -188,7 +190,7 @@ export default function MembersTab({ members = [], todos = [] }) {
           onClick={openCreate}
           disabled={loading}
         >
-          + Ajouter
+          + {t("settings.members.add")}
         </button>
       </div>
 
@@ -203,11 +205,11 @@ export default function MembersTab({ members = [], todos = [] }) {
             <thead>
               <tr>
                 <th style={{ ...styles.th, width: 44 }}></th>
-                <th style={styles.th}>Nom</th>
-                <th style={styles.th}>Role</th>
-                <th style={{ ...styles.th, width: 160 }}>Charge</th>
+                <th style={styles.th}>{t("settings.members.name")}</th>
+                <th style={styles.th}>{t("settings.members.role")}</th>
+                <th style={{ ...styles.th, width: 160 }}>{t("workspace.charge")}</th>
                 <th style={{ ...styles.th, width: 110, textAlign: "right" }}>
-                  Actions
+                  {t("common.actions")}
                 </th>
               </tr>
             </thead>
@@ -270,6 +272,7 @@ function MemberRow({
   onToggleTodo,
   onDeleteTodo,
 }) {
+  const { t } = useTranslation();
   return (
     <>
       <tr style={styles.tr}>
@@ -318,7 +321,7 @@ function MemberRow({
         <td style={{ ...styles.td, textAlign: "right" }}>
           <button
             type="button"
-            title="Taches"
+            title={t("nav.workspace")}
             style={{
               ...styles.iconBtn,
               color: isExpanded ? colors.accent : "var(--text3)",
@@ -382,6 +385,13 @@ function TodosSection({
 }) {
   const [newContent, setNewContent] = useState("");
   const [newPriority, setNewPriority] = useState("medium");
+  const { t } = useTranslation();
+
+  const PRIORITY_LABELS = {
+    high: t("dock.todo_modal.priority.high"),
+    medium: t("dock.todo_modal.priority.medium"),
+    low: t("dock.todo_modal.priority.low"),
+  };
 
   const handleAdd = () => {
     const trimmed = newContent.trim();
@@ -403,14 +413,14 @@ function TodosSection({
       {/* Header */}
       <div style={todoStyles.header}>
         <span style={todoStyles.headerLabel}>
-          Taches ({todos.length})
+          {t("dock.todo_modal.title")} ({todos.length})
         </span>
       </div>
 
       {/* Todo list */}
       {todos.length === 0 ? (
         <div style={todoStyles.emptyRow}>
-          <span style={todoStyles.emptyText}>Aucune tache</span>
+          <span style={todoStyles.emptyText}>{t("dock.todo_modal.empty")}</span>
         </div>
       ) : (
         <div style={todoStyles.list}>
@@ -426,7 +436,7 @@ function TodosSection({
                 }}
                 onClick={() => onToggleTodo(memberId, todo)}
                 disabled={loading}
-                title={todo.completed ? "Rouvrir" : "Terminer"}
+                title={todo.completed ? t("dock.todo_modal.task_reactivated") : t("dock.todo_modal.task_done")}
               >
                 {todo.completed && (
                   <span style={todoStyles.checkmark}>{"\u2713"}</span>
@@ -478,7 +488,7 @@ function TodosSection({
           value={newContent}
           onChange={(e) => setNewContent(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Nouvelle tache..."
+          placeholder={t("dock.todo_modal.add_placeholder")}
           style={todoStyles.addInput}
           disabled={loading}
         />
@@ -488,9 +498,9 @@ function TodosSection({
           style={todoStyles.addSelect}
           disabled={loading}
         >
-          <option value="high">Haute</option>
-          <option value="medium">Moyenne</option>
-          <option value="low">Basse</option>
+          <option value="high">{t("dock.todo_modal.priority.high")}</option>
+          <option value="medium">{t("dock.todo_modal.priority.medium")}</option>
+          <option value="low">{t("dock.todo_modal.priority.low")}</option>
         </select>
         <button
           type="button"
@@ -502,7 +512,7 @@ function TodosSection({
           onClick={handleAdd}
           disabled={loading || !newContent.trim()}
         >
-          + Ajouter
+          + {t("settings.members.add")}
         </button>
       </div>
     </div>
@@ -515,6 +525,7 @@ function TodosSection({
 
 function MemberModal({ member, loading, onSave, onClose }) {
   const isEdit = !!member;
+  const { t } = useTranslation();
   const [form, setForm] = useState(
     isEdit
       ? {
@@ -563,7 +574,7 @@ function MemberModal({ member, loading, onSave, onClose }) {
         {/* Header */}
         <div style={modalStyles.header}>
           <span style={modalStyles.title}>
-            {isEdit ? "Modifier le membre" : "Nouveau membre"}
+            {isEdit ? t("settings.members.title") : t("settings.members.add")}
           </span>
           <button type="button" style={modalStyles.closeBtn} onClick={onClose}>
             {"\u2715"}
@@ -574,7 +585,7 @@ function MemberModal({ member, loading, onSave, onClose }) {
         <form onSubmit={handleSubmit} style={modalStyles.body}>
           {/* Name */}
           <label style={modalStyles.label}>
-            Nom
+            {t("settings.members.name")}
             <input
               type="text"
               value={form.name}
@@ -591,7 +602,7 @@ function MemberModal({ member, loading, onSave, onClose }) {
 
           {/* Role */}
           <label style={modalStyles.label}>
-            Role
+            {t("settings.members.role")}
             <input
               type="text"
               value={form.role}
@@ -656,7 +667,7 @@ function MemberModal({ member, loading, onSave, onClose }) {
               onClick={onClose}
               disabled={loading}
             >
-              Annuler
+              {t("common.cancel")}
             </button>
             <button
               type="submit"
@@ -667,7 +678,7 @@ function MemberModal({ member, loading, onSave, onClose }) {
               }}
               disabled={loading}
             >
-              {loading ? "..." : isEdit ? "Enregistrer" : "Creer"}
+              {loading ? "..." : isEdit ? t("common.save") : t("common.create")}
             </button>
           </div>
         </form>

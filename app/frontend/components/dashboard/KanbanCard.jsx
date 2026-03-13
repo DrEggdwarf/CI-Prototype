@@ -1,16 +1,10 @@
 import { useState, useCallback } from "react";
 import { colors, fonts, radii } from "../../styles/tokens";
+import { useTranslation } from "../../lib/useTranslation";
 
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
-
-const CRIT_LABELS = {
-  critical: "Critique",
-  high: "Élevé",
-  medium: "Moyen",
-  low: "Faible",
-};
 
 const CRIT_STRIPE = {
   critical: "#dc2626",
@@ -24,15 +18,6 @@ const CRIT_BADGE = {
   high: { background: "#fff7ed", color: "#c2410c" },
   medium: { background: "#fefce8", color: "#92400e" },
   low: { background: "#f0fdf4", color: "#15803d" },
-};
-
-const DOMAIN_LABELS = {
-  finance: "Finance",
-  it: "IT",
-  rh: "RH",
-  achats: "Achats",
-  logistique: "Logistique",
-  juridique: "Juridique",
 };
 
 const MONTH_SHORT_FR = [
@@ -51,7 +36,7 @@ const MONTH_SHORT_FR = [
  */
 function formatDateFr(iso) {
   if (!iso) return "";
-  const [y, m, d] = iso.split("-").map(Number);
+  const [, m, d] = iso.split("-").map(Number);
   return `${d} ${MONTH_SHORT_FR[m - 1]}`;
 }
 
@@ -74,8 +59,25 @@ export default function KanbanCard({
   draggable = false,
   done = false,
 }) {
+  const { t } = useTranslation();
   const [hovered, setHovered] = useState(false);
   const [dragging, setDragging] = useState(false);
+
+  const critLabels = {
+    critical: t("criticality.critical"),
+    high:     t("criticality.high"),
+    medium:   t("criticality.medium"),
+    low:      t("criticality.low"),
+  };
+
+  const domainLabels = {
+    finance:   t("domains.finance"),
+    it:        t("domains.it"),
+    rh:        t("domains.rh"),
+    achats:    t("domains.achats"),
+    logistique: t("domains.logistique"),
+    juridique: t("domains.juridique"),
+  };
 
   const crit = control.criticality || "medium";
   const stripeColor = done ? "#94a3b8" : (CRIT_STRIPE[crit] || CRIT_STRIPE.medium);
@@ -160,12 +162,12 @@ export default function KanbanCard({
             color: critBadge.color,
           }}
         >
-          {CRIT_LABELS[crit] || crit}
+          {critLabels[crit] || crit}
         </span>
 
-        {control.domain && DOMAIN_LABELS[control.domain] && (
+        {control.domain && domainLabels[control.domain] && (
           <span style={styles.badgeDomain}>
-            {DOMAIN_LABELS[control.domain]}
+            {domainLabels[control.domain]}
           </span>
         )}
       </div>

@@ -1,6 +1,6 @@
 class Control < ApplicationRecord
   CRITICALITIES = %w[critical high medium low].freeze
-  STATUSES = %w[pending overdue done].freeze
+  STATUSES = %w[pending in_progress overdue done].freeze
   FREQUENCIES = %w[daily weekly monthly quarterly yearly].freeze
 
   belongs_to :assignee, class_name: "Member", optional: true

@@ -1,5 +1,5 @@
-import { useState } from "react";
 import { colors, fonts, radii, shadows } from "../../styles/tokens";
+import { useTranslation } from "../../lib/useTranslation";
 
 /**
  * KpiBar — barre de 5 KPIs pour le header du dashboard.
@@ -9,8 +9,8 @@ import { colors, fonts, radii, shadows } from "../../styles/tokens";
  * @param {Array}    props.signals  - liste des signaux IA
  * @param {Function} [props.onKpiClick] - callback optionnel (kpiKey) => void
  */
-export default function KpiBar({ controls = [], signals = [], onKpiClick }) {
-  const [hoveredIndex, setHoveredIndex] = useState(null);
+export default function KpiBar({ controls = [], signals = [] }) {
+  const { t } = useTranslation();
 
   // --- KPI calculations ---
   const done = controls.filter((c) => c.status === "done");
@@ -23,33 +23,19 @@ export default function KpiBar({ controls = [], signals = [], onKpiClick }) {
       : 0;
 
   const kpis = [
-    { key: "completed", label: "Complétés", value: done.length, color: colors.low },
-    { key: "pending", label: "En cours", value: pending.length, color: colors.accent },
-    { key: "overdue", label: "En retard", value: overdue.length, color: colors.critical },
-    { key: "signals", label: "Signaux IA", value: signals.length, color: colors.ai },
-    { key: "success_rate", label: "Taux de succès", value: `${successRate}%`, color: colors.medium },
+    { key: "completed", label: t("dashboard.kpi.completed"), value: done.length, color: colors.low },
+    { key: "pending", label: t("dashboard.kpi.pending"), value: pending.length, color: colors.accent },
+    { key: "overdue", label: t("dashboard.kpi.overdue"), value: overdue.length, color: colors.critical },
+    { key: "signals", label: t("dashboard.kpi.signals"), value: signals.length, color: colors.ai },
+    { key: "success_rate", label: t("dashboard.kpi.success_rate"), value: `${successRate}%`, color: colors.medium },
   ];
 
   return (
     <div style={styles.bar}>
-      {kpis.map((kpi, index) => (
+      {kpis.map((kpi) => (
         <div
           key={kpi.key}
-          role="button"
-          tabIndex={0}
-          style={{
-            ...styles.card,
-            ...(hoveredIndex === index ? styles.cardHover : {}),
-          }}
-          onClick={() => onKpiClick?.(kpi.key)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault();
-              onKpiClick?.(kpi.key);
-            }
-          }}
-          onMouseEnter={() => setHoveredIndex(index)}
-          onMouseLeave={() => setHoveredIndex(null)}
+          style={styles.card}
         >
           <span style={styles.label}>{kpi.label}</span>
           <span style={{ ...styles.value, color: kpi.color }}>{kpi.value}</span>
@@ -81,14 +67,6 @@ const styles = {
     border: `1px solid ${colors.border}`,
     borderRadius: radii.card,
     boxShadow: shadows.card,
-    cursor: "pointer",
-    transition: "border-color 0.15s ease, transform 0.15s ease",
-    outline: "none",
-  },
-
-  cardHover: {
-    borderColor: colors.border2,
-    transform: "translateY(-1px)",
   },
 
   label: {

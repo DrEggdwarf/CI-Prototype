@@ -6,6 +6,8 @@
 # =============================================================================
 
 puts "🧹 Nettoyage des données existantes..."
+Document.destroy_all
+NewsItem.destroy_all
 Pick.destroy_all
 Comment.destroy_all
 Attachment.destroy_all
@@ -722,6 +724,316 @@ end
 puts "   ✅ #{TeamMessage.count} messages d'équipe créés"
 
 # ---------------------------------------------------------------------------
+# 8. DOCUMENTS (10)
+# ---------------------------------------------------------------------------
+puts "📄 Création des documents..."
+
+# Sample controls by domain for realistic attachment
+finance_controls  = controls.select { |c| c.domain == "finance" }.first(5)
+it_controls       = controls.select { |c| c.domain == "it" }.first(5)
+rh_controls       = controls.select { |c| c.domain == "rh" }.first(3)
+juridique_controls = controls.select { |c| c.domain == "juridique" }.first(3)
+
+documents_seed = [
+  {
+    name: "Procédure de réconciliation bancaire",
+    file_url: "https://docs.verisure.fr/finance/procedure-reconciliation-bancaire.pdf",
+    file_type: "pdf",
+    file_size: 245_120,
+    description: "Procédure détaillée pour la réconciliation bancaire mensuelle, incluant les étapes de validation et les responsabilités.",
+    uploaded_by: members[0],
+    control: finance_controls[0],
+    shared: true
+  },
+  {
+    name: "Matrice des risques IT 2026",
+    file_url: "https://docs.verisure.fr/it/matrice-risques-it-2026.xlsx",
+    file_type: "xlsx",
+    file_size: 87_040,
+    description: "Cartographie complète des risques IT avec scoring, probabilité d'occurrence et mesures de mitigation.",
+    uploaded_by: members[7],
+    control: it_controls[0],
+    shared: true
+  },
+  {
+    name: "Rapport d'audit interne Q4 2025",
+    file_url: "https://docs.verisure.fr/audit/rapport-audit-interne-q4-2025.pdf",
+    file_type: "pdf",
+    file_size: 1_024_000,
+    description: "Rapport complet de l'audit interne du quatrième trimestre 2025, avec observations et recommandations.",
+    uploaded_by: members[1],
+    control: nil,
+    shared: true
+  },
+  {
+    name: "Plan de contrôle annuel 2026",
+    file_url: "https://docs.verisure.fr/planning/plan-controle-annuel-2026.xlsx",
+    file_type: "xlsx",
+    file_size: 156_672,
+    description: "Planning annuel de tous les contrôles prévus en 2026, avec fréquences, assignations et domaines.",
+    uploaded_by: members[0],
+    control: nil,
+    shared: true
+  },
+  {
+    name: "Référentiel contrôle interne v3.2",
+    file_url: "https://docs.verisure.fr/referentiel/referentiel-ci-v3.2.docx",
+    file_type: "docx",
+    file_size: 512_000,
+    description: "Version à jour du référentiel de contrôle interne. Inclut les mises à jour réglementaires DORA et Sapin II.",
+    uploaded_by: members[4],
+    control: nil,
+    shared: true
+  },
+  {
+    name: "Résultats scan vulnérabilités T1 2026",
+    file_url: "https://docs.verisure.fr/it/scan-vulnerabilites-t1-2026.pdf",
+    file_type: "pdf",
+    file_size: 324_608,
+    description: "Rapport du scan de vulnérabilités trimestriel. 3 findings medium, 0 critical. Actions correctives planifiées.",
+    uploaded_by: members[7],
+    control: it_controls[1],
+    shared: true
+  },
+  {
+    name: "Tableau de bord KPIs contrôle interne",
+    file_url: "https://docs.verisure.fr/reporting/tableau-bord-kpis-ci.pptx",
+    file_type: "pptx",
+    file_size: 2_097_152,
+    description: "Présentation PowerPoint du tableau de bord mensuel destinée au COMEX.",
+    uploaded_by: members[0],
+    control: nil,
+    shared: true
+  },
+  {
+    name: "Politique de gestion des accès SI",
+    file_url: "https://docs.verisure.fr/it/politique-gestion-acces-si.pdf",
+    file_type: "pdf",
+    file_size: 198_656,
+    description: "Politique officielle de gestion des droits d'accès aux systèmes d'information, validée par la DSI.",
+    uploaded_by: members[7],
+    control: it_controls[2],
+    shared: true
+  },
+  {
+    name: "Modèle contrat fournisseur type",
+    file_url: "https://docs.verisure.fr/juridique/modele-contrat-fournisseur-type.docx",
+    file_type: "docx",
+    file_size: 73_728,
+    description: "Template de contrat fournisseur intégrant les clauses RSE, RGPD, et devoir de vigilance.",
+    uploaded_by: members[4],
+    control: juridique_controls[0],
+    shared: true
+  },
+  {
+    name: "Capture écran anomalie réconciliation fév.",
+    file_url: "https://docs.verisure.fr/finance/anomalie-reconciliation-fev-2026.png",
+    file_type: "image",
+    file_size: 524_288,
+    description: "Capture d'écran illustrant l'écart détecté lors de la réconciliation bancaire de février 2026.",
+    uploaded_by: members[1],
+    control: finance_controls[1],
+    shared: false
+  }
+]
+
+documents_seed.each { |attrs| Document.create!(attrs) }
+puts "   ✅ #{Document.count} documents créés"
+
+# ---------------------------------------------------------------------------
+# 9. NEWS ITEMS (18)
+# ---------------------------------------------------------------------------
+puts "📰 Création des news items..."
+
+now_time = Time.current
+
+news_seed = [
+  {
+    title: "DORA : publication des normes techniques définitives par l'ESMA",
+    summary: "L'Autorité européenne des marchés financiers a publié le 15 janvier 2026 les normes techniques réglementaires définitives (RTS) concernant le Digital Operational Resilience Act. Les établissements financiers disposent de 6 mois pour se mettre en conformité sur les volets ICT risk management et incident reporting.",
+    source_url: "https://www.esma.europa.eu/press-news/esma-news/dora-rts-published",
+    source_name: "ESMA",
+    category: "cyber",
+    tags: ["DORA", "réglementation", "conformité", "ICT"],
+    published_at: now_time - 55.days,
+    pinned: true
+  },
+  {
+    title: "Sapin II : actualisation du guide pratique AFA 2026",
+    summary: "L'Agence Française Anticorruption a mis à jour en février 2026 son guide pratique sur la mise en conformité Sapin II. Nouvelles précisions sur le devoir de vigilance des filiales et le renforcement des obligations de cartographie des risques de corruption.",
+    source_url: "https://www.agence-francaise-anticorruption.gouv.fr/guide-sapin-ii-2026",
+    source_name: "AFA",
+    category: "juridique",
+    tags: ["Sapin II", "anticorruption", "AFA"],
+    published_at: now_time - 40.days,
+    pinned: true
+  },
+  {
+    title: "Bilan des contrôles IT : résultats du scan T1 2026",
+    summary: "Le scan de vulnérabilités trimestriel réalisé par l'équipe IT Security a identifié 3 findings de sévérité moyenne et aucun finding critique. Les correctifs ont été appliqués sur l'ensemble des systèmes en moins de 72 heures. Le rapport complet est disponible dans le cloud partagé.",
+    source_url: nil,
+    source_name: "Interne",
+    category: "interne",
+    tags: ["IT", "sécurité", "scan", "T1-2026"],
+    published_at: now_time - 30.days,
+    pinned: false
+  },
+  {
+    title: "ANSSI : nouvelles recommandations sécurité des SI industriels",
+    summary: "L'ANSSI a publié un guide actualisé sur la sécurisation des systèmes industriels (OT/ICS). Ce document introduit 12 nouvelles mesures obligatoires pour les opérateurs d'importance vitale et recommande une revue complète des architectures réseau segmentées.",
+    source_url: "https://www.ssi.gouv.fr/guide/si-industriels-2026",
+    source_name: "ANSSI",
+    category: "cyber",
+    tags: ["ANSSI", "OT", "ICS", "sécurité industrielle"],
+    published_at: now_time - 25.days,
+    pinned: false
+  },
+  {
+    title: "RGPD : le montant moyen des amendes CNIL en hausse de 34% en 2025",
+    summary: "La CNIL a publié son bilan annuel 2025 faisant état d'une hausse significative des sanctions. Le montant moyen des amendes a augmenté de 34%. Les principaux manquements constatés concernent le défaut de base légale, les transferts hors UE non conformes et la durée de conservation excessive des données.",
+    source_url: "https://www.cnil.fr/bilan-sanctions-2025",
+    source_name: "CNIL",
+    category: "juridique",
+    tags: ["RGPD", "CNIL", "sanctions", "données personnelles"],
+    published_at: now_time - 22.days,
+    pinned: false
+  },
+  {
+    title: "Taux de conformité global : 87% en mars 2026",
+    summary: "Le tableau de bord de contrôle interne de mars 2026 affiche un taux de conformité global de 87%, en hausse de 5 points par rapport à février. Les domaines finance et juridique progressent fortement. Le domaine achats reste sous surveillance avec un taux de 72%.",
+    source_url: nil,
+    source_name: "Interne",
+    category: "interne",
+    tags: ["KPI", "conformité", "tableau-de-bord"],
+    published_at: now_time - 12.days,
+    pinned: true
+  },
+  {
+    title: "Décret sur l'index égalité professionnelle : nouvelles obligations 2026",
+    summary: "Un décret paru au Journal Officiel du 3 février 2026 renforce les obligations de publication de l'index égalité H/F pour les entreprises de plus de 50 salariés. Les indicateurs relatifs aux augmentations individuelles et aux retours de congé maternité font l'objet de nouvelles modalités de calcul.",
+    source_url: "https://www.legifrance.gouv.fr/jorf/decret-egalite-pro-2026",
+    source_name: "Legifrance",
+    category: "rh",
+    tags: ["égalité professionnelle", "index H/F", "décret"],
+    published_at: now_time - 38.days,
+    pinned: false
+  },
+  {
+    title: "Point de vigilance : fraude au virement bancaire en hausse",
+    summary: "La Fédération Bancaire Française alerte sur une recrudescence des tentatives de fraude au virement international ciblant les services comptables et financiers. Les techniques de social engineering et d'usurpation d'identité de dirigeants (fraude au président) sont en forte progression au T1 2026.",
+    source_url: "https://www.fbf.fr/alerte-fraude-virement-2026",
+    source_name: "FBF",
+    category: "finance",
+    tags: ["fraude", "virement", "cybersécurité", "finance"],
+    published_at: now_time - 18.days,
+    pinned: false
+  },
+  {
+    title: "Résultats inventaire tournant mars 2026 : écart à 1.8%",
+    summary: "L'inventaire tournant de mars 2026 affiche un taux d'écart de 1.8%, en nette amélioration par rapport aux 3.2% de février. Les actions correctives menées sur les articles high-value portent leurs fruits. Objectif : revenir sous le seuil de 1% d'ici mai 2026.",
+    source_url: nil,
+    source_name: "Interne",
+    category: "interne",
+    tags: ["inventaire", "logistique", "écart"],
+    published_at: now_time - 10.days,
+    pinned: false
+  },
+  {
+    title: "NIS2 : transposition en droit français publiée",
+    summary: "La transposition de la directive NIS2 en droit français a été publiée au Journal Officiel. Elle étend le périmètre des entités concernées à plusieurs milliers de nouvelles organisations, impose des obligations renforcées de gestion des risques cyber et introduit des délais stricts de notification d'incidents (24h pour signalement initial).",
+    source_url: "https://www.legifrance.gouv.fr/jorf/ordonnance-nis2-2026",
+    source_name: "Legifrance",
+    category: "cyber",
+    tags: ["NIS2", "cybersécurité", "réglementation", "incident"],
+    published_at: now_time - 50.days,
+    pinned: false
+  },
+  {
+    title: "LCB-FT : nouvelles lignes directrices ACPR sur la vigilance renforcée",
+    summary: "L'ACPR a publié de nouvelles lignes directrices sur la lutte contre le blanchiment de capitaux et le financement du terrorisme. Focus sur la vigilance renforcée à l'égard des PPE et des relations d'affaires avec les pays à risque élevé selon le GAFI.",
+    source_url: "https://acpr.banque-france.fr/lgd-lcb-ft-2026",
+    source_name: "ACPR",
+    category: "juridique",
+    tags: ["LCB-FT", "ACPR", "blanchiment", "conformité"],
+    published_at: now_time - 35.days,
+    pinned: false
+  },
+  {
+    title: "Lancement du nouveau portail de signalement interne",
+    summary: "Conformément aux obligations de la loi Sapin II et de la directive Lanceurs d'alerte, le nouveau portail de signalement interne est en ligne depuis le 1er mars 2026. Tous les collaborateurs peuvent désormais signaler des manquements éthiques de manière sécurisée et anonyme.",
+    source_url: nil,
+    source_name: "Interne",
+    category: "interne",
+    tags: ["lanceur d'alerte", "éthique", "Sapin II"],
+    published_at: now_time - 13.days,
+    pinned: false
+  },
+  {
+    title: "Hausse du SMIC au 1er janvier 2026 : impact sur les contrôles paie",
+    summary: "Le SMIC a été revalorisé de 2.2% au 1er janvier 2026, passant à 1 801,80 € bruts mensuels. Les équipes RH doivent vérifier la conformité des rémunérations minimales conventionnelles dans les prochains contrôles paie et actualiser les paramétrages des logiciels de paie.",
+    source_url: "https://www.service-public.fr/particuliers/vosdroits/smic-2026",
+    source_name: "Service-Public",
+    category: "rh",
+    tags: ["SMIC", "paie", "rémunération"],
+    published_at: now_time - 70.days,
+    pinned: false
+  },
+  {
+    title: "Alerte sécurité : vulnérabilité critique OpenSSL (CVE-2026-1337)",
+    summary: "Une vulnérabilité critique de type buffer overflow a été découverte dans OpenSSL (versions 3.0 à 3.3). Un correctif est disponible. Toutes les équipes IT sont invitées à procéder à la mise à jour en urgence sur les serveurs exposés. Score CVSS : 9.8.",
+    source_url: "https://www.cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2026-1337",
+    source_name: "ANSSI",
+    category: "cyber",
+    tags: ["CVE", "OpenSSL", "patch", "urgence"],
+    published_at: now_time - 8.days,
+    pinned: true
+  },
+  {
+    title: "Résultats revue comptes à privilèges : 2 comptes orphelins désactivés",
+    summary: "La revue des comptes à privilèges élevés (Active Directory, bases de données, accès cloud) réalisée en mars 2026 a permis d'identifier et de désactiver 2 comptes orphelins actifs depuis plus de 90 jours. Aucun accès non autorisé constaté. Prochaine revue planifiée en juin.",
+    source_url: nil,
+    source_name: "Interne",
+    category: "interne",
+    tags: ["comptes à privilèges", "AD", "sécurité"],
+    published_at: now_time - 7.days,
+    pinned: false
+  },
+  {
+    title: "Taxonomie UE : rapport de durabilité obligatoire pour 2026",
+    summary: "Dans le cadre de la CSRD, les entreprises soumises à l'obligation de reporting extra-financier doivent intégrer les indicateurs de la taxonomie européenne dans leur rapport de durabilité 2026. Le contrôle de la conformité de ces déclarations est désormais du ressort des équipes de contrôle interne.",
+    source_url: "https://www.ecologie.gouv.fr/csrd-taxonomie-ue",
+    source_name: "Ministère Ecologie",
+    category: "juridique",
+    tags: ["CSRD", "taxonomie UE", "ESG", "reporting"],
+    published_at: now_time - 45.days,
+    pinned: false
+  },
+  {
+    title: "Hausse des coûts logistiques : impact sur les contrôles fournisseurs",
+    summary: "L'indice du coût du transport routier a progressé de 7.3% sur le premier trimestre 2026. Cette hausse impacte les marges et nécessite une révision des contrôles sur les conditions tarifaires négociées avec les prestataires logistiques. Revue des contrats cadres recommandée avant fin T2.",
+    source_url: "https://www.aft.asso.fr/indice-cout-transport-t1-2026",
+    source_name: "AFT",
+    category: "finance",
+    tags: ["logistique", "coûts", "fournisseurs", "transport"],
+    published_at: now_time - 20.days,
+    pinned: false
+  },
+  {
+    title: "Formation obligatoire : mise à jour e-learning anticorruption disponible",
+    summary: "Le module de formation e-learning anticorruption a été mis à jour pour intégrer les nouvelles lignes directrices AFA 2026. La formation est obligatoire pour l'ensemble des collaborateurs exposés. Les équipes RH doivent suivre les taux de complétion et s'assurer que 100% des collaborateurs concernés sont formés avant le 30 juin 2026.",
+    source_url: nil,
+    source_name: "Interne",
+    category: "interne",
+    tags: ["formation", "anticorruption", "e-learning", "Sapin II"],
+    published_at: now_time - 5.days,
+    pinned: false
+  }
+]
+
+news_seed.each { |attrs| NewsItem.create!(attrs) }
+puts "   ✅ #{NewsItem.count} news items créés"
+
+# ---------------------------------------------------------------------------
 # RÉSUMÉ FINAL
 # ---------------------------------------------------------------------------
 puts ""
@@ -736,4 +1048,6 @@ puts " Picks         : #{Pick.count}"
 puts " Attachments   : #{Attachment.count}"
 puts " Todos         : #{Todo.count}"
 puts " TeamMessages  : #{TeamMessage.count}"
+puts " Documents     : #{Document.count}"
+puts " NewsItems     : #{NewsItem.count}"
 puts "=" * 60

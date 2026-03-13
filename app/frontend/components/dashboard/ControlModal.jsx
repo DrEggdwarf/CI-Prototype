@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import ReactDOM from "react-dom";
 import { router } from "@inertiajs/react";
 import { colors, fonts, zIndex } from "../../styles/tokens";
+import { useTranslation } from "../../lib/useTranslation";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -10,13 +11,6 @@ import { colors, fonts, zIndex } from "../../styles/tokens";
 const PANEL_WIDTH = 680;
 const RIGHT_COL_W = 248;
 
-const CRITICALITY_LABELS = {
-  critical: "Critique",
-  high: "Élevée",
-  medium: "Moyenne",
-  low: "Faible",
-};
-
 const CRITICALITY_COLORS = {
   critical: { bg: "#fef2f2", color: "#dc2626", border: "#fca5a5" },
   high: { bg: "#fff7ed", color: "#ea6c10", border: "#fdba74" },
@@ -24,20 +18,6 @@ const CRITICALITY_COLORS = {
   low: { bg: "#f0fdf4", color: "#16a34a", border: "#86efac" },
 };
 
-const DOMAIN_LABELS = {
-  finance: "Finance",
-  it: "IT",
-  rh: "RH",
-  achats: "Achats",
-  logistique: "Logistique",
-  juridique: "Juridique",
-};
-
-const STATUS_LABELS = {
-  pending: "En cours",
-  overdue: "En retard",
-  done: "Complété",
-};
 
 const STATUS_COLORS = {
   pending: { bg: "#eef2ff", color: "#2563eb", border: "#bfdbfe" },
@@ -115,30 +95,12 @@ function getAssigneeName(control, members) {
 function getRiskInfo(passRate) {
   const score = Math.round(100 - (passRate || 0));
   if (score > 35) {
-    return {
-      score,
-      bg: "#fef2f2",
-      color: "#dc2626",
-      border: "#fca5a5",
-      label: "Attention requise",
-    };
+    return { score, bg: "#fef2f2", color: "#dc2626", border: "#fca5a5", level: "high" };
   }
   if (score >= 20) {
-    return {
-      score,
-      bg: "#fefce8",
-      color: "#b58a00",
-      border: "#fde68a",
-      label: "Surveillance active",
-    };
+    return { score, bg: "#fefce8", color: "#b58a00", border: "#fde68a", level: "medium" };
   }
-  return {
-    score,
-    bg: "#f0fdf4",
-    color: "#16a34a",
-    border: "#86efac",
-    label: "Risque maîtrisé",
-  };
+  return { score, bg: "#f0fdf4", color: "#16a34a", border: "#86efac", level: "low" };
 }
 
 // ---------------------------------------------------------------------------
@@ -347,6 +309,7 @@ function MetaRow({ icon, label, value }) {
 // ---------------------------------------------------------------------------
 
 export default function ControlModal({ control, members, onClose }) {
+  const { t } = useTranslation();
   const panelRef = useRef(null);
   const [commentText, setCommentText] = useState("");
   const [localComments, setLocalComments] = useState(null);
@@ -432,11 +395,40 @@ export default function ControlModal({ control, members, onClose }) {
   // Don't render anything if no control
   if (!control) return null;
 
+  const criticalityLabels = {
+    critical: t("criticality.critical"),
+    high:     t("criticality.high"),
+    medium:   t("criticality.medium"),
+    low:      t("criticality.low"),
+  };
+
+  const domainLabels = {
+    finance:    t("domains.finance"),
+    it:         t("domains.it"),
+    rh:         t("domains.rh"),
+    achats:     t("domains.achats"),
+    logistique: t("domains.logistique"),
+    juridique:  t("domains.juridique"),
+  };
+
+  const statusLabels = {
+    pending: t("dashboard.kpi.pending"),
+    overdue: t("dashboard.kpi.overdue"),
+    done:    t("dashboard.kpi.completed"),
+  };
+
+  const riskLabels = {
+    high:   t("criticality.high"),
+    medium: t("criticality.medium"),
+    low:    t("criticality.low"),
+  };
+
   const comments = localComments || control.comments || [];
   const critColor = CRITICALITY_COLORS[control.criticality] || CRITICALITY_COLORS.medium;
   const statusColor = STATUS_COLORS[control.status] || STATUS_COLORS.pending;
   const domainColor = colors.domains?.[control.domain] || colors.accent;
-  const risk = getRiskInfo(control.pass_rate);
+  const risk = { ...getRiskInfo(control.pass_rate) };
+  risk.label = riskLabels[risk.level];
   const assigneeName = getAssigneeName(control, members);
 
   const modal = (
@@ -445,7 +437,7 @@ export default function ControlModal({ control, members, onClose }) {
       onClick={handleOverlayClick}
       role="dialog"
       aria-modal="true"
-      aria-label={`Détail du contrôle ${control.name}`}
+      aria-label={`${t("dashboard.modal.details")} — ${control.name}`}
     >
       <div
         ref={panelRef}
@@ -458,21 +450,21 @@ export default function ControlModal({ control, members, onClose }) {
             <div style={styles.controlName}>{control.name}</div>
             <div style={styles.badges}>
               <Badge
-                label={CRITICALITY_LABELS[control.criticality] || control.criticality}
+                label={criticalityLabels[control.criticality] || control.criticality}
                 bg={critColor.bg}
                 color={critColor.color}
                 border={critColor.border}
               />
               {control.domain && (
                 <Badge
-                  label={DOMAIN_LABELS[control.domain] || control.domain}
+                  label={domainLabels[control.domain] || control.domain}
                   bg={`${domainColor}11`}
                   color={domainColor}
                   border={`${domainColor}33`}
                 />
               )}
               <Badge
-                label={STATUS_LABELS[control.status] || control.status}
+                label={statusLabels[control.status] || control.status}
                 bg={statusColor.bg}
                 color={statusColor.color}
                 border={statusColor.border}
@@ -481,7 +473,7 @@ export default function ControlModal({ control, members, onClose }) {
           </div>
           <button
             type="button"
-            aria-label="Fermer"
+            aria-label={t("common.close")}
             onClick={onClose}
             style={styles.closeBtn}
           >
@@ -493,11 +485,11 @@ export default function ControlModal({ control, members, onClose }) {
         <div style={styles.body}>
           {/* Left column — Historique */}
           <div style={styles.leftCol}>
-            <div style={styles.colTitle}>Historique</div>
+            <div style={styles.colTitle}>{t("dashboard.modal.comments")}</div>
 
             {comments.length === 0 ? (
               <div style={styles.emptyHistory}>
-                <span style={styles.emptyText}>Aucun historique</span>
+                <span style={styles.emptyText}>{t("dashboard.modal.no_comments")}</span>
               </div>
             ) : (
               <div style={styles.timeline}>
@@ -516,7 +508,7 @@ export default function ControlModal({ control, members, onClose }) {
               <textarea
                 value={commentText}
                 onChange={(e) => setCommentText(e.target.value)}
-                placeholder="Ajouter un commentaire..."
+                placeholder={t("dashboard.modal.add_comment")}
                 style={styles.textarea}
               />
               <button
@@ -529,14 +521,14 @@ export default function ControlModal({ control, members, onClose }) {
                   cursor: commentText.trim() ? "pointer" : "default",
                 }}
               >
-                Envoyer
+                {t("common.send")}
               </button>
             </div>
           </div>
 
           {/* Right column — Analyse IA */}
           <div style={styles.rightCol}>
-            <div style={styles.colTitle}>Analyse IA</div>
+            <div style={styles.colTitle}>{t("dashboard.modal.details")}</div>
 
             {/* Risk score circle */}
             <div style={styles.riskSection}>
@@ -577,7 +569,7 @@ export default function ControlModal({ control, members, onClose }) {
                     lineHeight: 1,
                   }}
                 >
-                  Score de risque
+                  {t("dashboard.kpi.success_rate")}
                 </div>
                 <div
                   style={{
@@ -596,11 +588,11 @@ export default function ControlModal({ control, members, onClose }) {
 
             {/* Metadata list */}
             <div style={styles.metaList}>
-              <MetaRow icon="📅" label="Échéance" value={formatDate(control.due_date)} />
-              <MetaRow icon="🔄" label="Fréquence" value={control.frequency || "—"} />
-              <MetaRow icon="⏱️" label="Durée" value={control.duration ? `${control.duration} jours` : "—"} />
-              <MetaRow icon="👤" label="Assigné à" value={assigneeName} />
-              <MetaRow icon="📊" label="Taux de succès" value={control.pass_rate != null ? `${control.pass_rate}%` : "—"} />
+              <MetaRow icon="📅" label={t("dashboard.modal.due_date")} value={formatDate(control.due_date)} />
+              <MetaRow icon="🔄" label={t("dashboard.modal.status")} value={control.frequency || "—"} />
+              <MetaRow icon="⏱️" label={t("common.controls")} value={control.duration ? `${control.duration} jours` : "—"} />
+              <MetaRow icon="👤" label={t("dashboard.modal.assignee")} value={assigneeName} />
+              <MetaRow icon="📊" label={t("dashboard.kpi.success_rate")} value={control.pass_rate != null ? `${control.pass_rate}%` : "—"} />
             </div>
           </div>
         </div>

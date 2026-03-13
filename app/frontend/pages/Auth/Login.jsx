@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
 import { useForm, usePage } from "@inertiajs/react";
 import { colors, fonts, radii, shadows } from "../../styles/tokens";
+import { useTranslation } from "../../lib/useTranslation";
 
 export default function Login() {
   const { errors: pageErrors } = usePage().props;
+  const { t } = useTranslation();
 
   const { data, setData, post, processing, errors } = useForm({
     member: {
@@ -41,8 +43,8 @@ export default function Login() {
       >
         {/* Header */}
         <div style={styles.header}>
-          <h1 style={styles.title}>CI Dashboard</h1>
-          <p style={styles.subtitle}>Connexion</p>
+          <h1 style={styles.title}>{t("nav.app_name") || "CI Dashboard"}</h1>
+          <p style={styles.subtitle}>{t("auth.sign_in") || "Connexion"}</p>
         </div>
 
         {/* Global error (e.g. invalid credentials) */}
@@ -54,7 +56,7 @@ export default function Login() {
           {/* Email */}
           <div style={styles.fieldGroup}>
             <label htmlFor="login-email" style={styles.label}>
-              Email
+              {t("auth.email") || "Adresse email"}
             </label>
             <input
               id="login-email"
@@ -80,7 +82,7 @@ export default function Login() {
           {/* Password */}
           <div style={styles.fieldGroup}>
             <label htmlFor="login-password" style={styles.label}>
-              Mot de passe
+              {t("auth.password") || "Mot de passe"}
             </label>
             <input
               id="login-password"
@@ -122,7 +124,7 @@ export default function Login() {
                 : colors.accent;
             }}
           >
-            {processing ? "Connexion..." : "Se connecter"}
+            {processing ? (t("auth.signing_in") || "Connexion...") : (t("auth.submit") || "Se connecter")}
           </button>
         </form>
       </div>

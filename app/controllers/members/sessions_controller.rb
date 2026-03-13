@@ -4,7 +4,7 @@ class Members::SessionsController < Devise::SessionsController
 
   # Affiche la page de login
   def new
-    render inertia: "Auth/Login"
+    render inertia: "Auth/Login", props: { translations: app_translations }
   end
 
   # Gère le POST de login

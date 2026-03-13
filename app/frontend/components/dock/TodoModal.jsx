@@ -1,49 +1,52 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from "react";
-import { router } from "@inertiajs/react";
+import { usePage } from "@inertiajs/react";
 import { colors, fonts, radii } from "../../styles/tokens";
-import { useToast } from "../../lib/useToast";
-import { useTranslation } from "../../lib/useTranslation";
 
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
 
-const PRIORITY_COLORS = {
+const PRIORITY_OPTIONS = [
+  { value: "low", label: "Faible" },
+  { value: "medium", label: "Moyenne" },
+  { value: "high", label: "Haute" },
+];
+
+const PRIORITY_STYLES = {
   high: { backgroundColor: "#fef2f2", color: "#dc2626", border: "1px solid #fca5a5" },
   medium: { backgroundColor: "#fefce8", color: "#92400e", border: "1px solid #fde68a" },
   low: { backgroundColor: "#f0fdf4", color: "#15803d", border: "1px solid #86efac" },
 };
 
+const PRIORITY_LABELS = { high: "Haute", medium: "Moyenne", low: "Faible" };
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-function parseTags(tags) {
-  if (!tags) return [];
-  if (Array.isArray(tags)) return tags;
-  try {
-    const parsed = JSON.parse(tags);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-}
-
 function sortTodos(todos) {
   const incomplete = todos.filter((t) => !t.completed);
   const completed = todos.filter((t) => t.completed);
-
   const sortFn = (a, b) => {
     if ((a.position ?? Infinity) !== (b.position ?? Infinity)) {
       return (a.position ?? Infinity) - (b.position ?? Infinity);
     }
     return new Date(a.created_at) - new Date(b.created_at);
   };
-
   incomplete.sort(sortFn);
   completed.sort(sortFn);
-
   return [...incomplete, ...completed];
+}
+
+function parseTags(tags) {
+  if (!tags) return [];
+  if (Array.isArray(tags)) return tags;
+  try {
+    const p = JSON.parse(tags);
+    return Array.isArray(p) ? p : [];
+  } catch {
+    return [];
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -53,26 +56,20 @@ function sortTodos(todos) {
 async function apiPost(memberId, body) {
   const res = await fetch(`/api/members/${memberId}/todos`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
+    headers: { "Content-Type": "application/json", Accept: "application/json" },
     body: JSON.stringify(body),
   });
-  if (!res.ok) throw new Error("Erreur lors de la creation");
+  if (!res.ok) throw new Error("Erreur cr\u00e9ation");
   return res.json();
 }
 
 async function apiPatch(memberId, todoId, body) {
   const res = await fetch(`/api/members/${memberId}/todos/${todoId}`, {
     method: "PATCH",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
+    headers: { "Content-Type": "application/json", Accept: "application/json" },
     body: JSON.stringify(body),
   });
-  if (!res.ok) throw new Error("Erreur lors de la mise a jour");
+  if (!res.ok) throw new Error("Erreur mise \u00e0 jour");
   return res.json();
 }
 
@@ -81,47 +78,39 @@ async function apiDelete(memberId, todoId) {
     method: "DELETE",
     headers: { Accept: "application/json" },
   });
-  if (!res.ok) throw new Error("Erreur lors de la suppression");
+  if (!res.ok) throw new Error("Erreur suppression");
 }
 
 // ---------------------------------------------------------------------------
 // Sub-components
 // ---------------------------------------------------------------------------
 
-function PrioritySelect({ value, onChange, options }) {
+function PriorityBadge({ priority }) {
+  const s = PRIORITY_STYLES[priority] || PRIORITY_STYLES.medium;
+  return (
+    <span style={{ ...styles.priorityBadge, ...s }}>
+      {PRIORITY_LABELS[priority] || "Moyenne"}
+    </span>
+  );
+}
+
+function PrioritySelect({ value, onChange }) {
   return (
     <select
       value={value}
       onChange={(e) => onChange(e.target.value)}
       style={styles.prioritySelect}
     >
-      {options.map((opt) => (
-        <option key={opt.value} value={opt.value}>
-          {opt.label}
+      {PRIORITY_OPTIONS.map((o) => (
+        <option key={o.value} value={o.value}>
+          {o.label}
         </option>
       ))}
     </select>
   );
 }
 
-function PriorityBadge({ priority, priorityLabels }) {
-  const colorStyle = PRIORITY_COLORS[priority] || PRIORITY_COLORS.medium;
-  const label = priorityLabels[priority] || priorityLabels.medium;
-
-  return (
-    <span style={{ ...styles.priorityBadge, ...colorStyle }}>
-      {label}
-    </span>
-  );
-}
-
-function TagBadge({ tag }) {
-  return <span style={styles.tagBadge}>{tag}</span>;
-}
-
-function TodoItem({ todo, memberId, onUpdate, priorityOptions, priorityLabels }) {
-  const toast = useToast();
-  const { t } = useTranslation();
+function TodoItem({ todo, memberId, onRefresh }) {
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState(todo.content);
   const [editPriority, setEditPriority] = useState(todo.priority || "medium");
@@ -129,36 +118,26 @@ function TodoItem({ todo, memberId, onUpdate, priorityOptions, priorityLabels })
   const inputRef = useRef(null);
 
   useEffect(() => {
-    if (isEditing && inputRef.current) {
-      inputRef.current.focus();
-      inputRef.current.select();
-    }
+    if (isEditing) inputRef.current?.focus();
   }, [isEditing]);
 
-  const handleToggle = async () => {
+  const handleToggle = useCallback(async () => {
     try {
-      await apiPatch(memberId, todo.id, {
-        todo: { completed: !todo.completed },
-      });
-      router.reload();
-      toast.addToast(
-        todo.completed ? t("dock.todo_modal.task_reactivated") : t("dock.todo_modal.task_done"),
-        { type: "success" },
-      );
+      await apiPatch(memberId, todo.id, { todo: { completed: !todo.completed } });
+      onRefresh();
     } catch {
-      toast.addToast(t("dock.todo_modal.error_update"), { type: "error" });
+      // Silently ignore
     }
-  };
+  }, [memberId, todo, onRefresh]);
 
-  const handleDelete = async () => {
+  const handleDelete = useCallback(async () => {
     try {
       await apiDelete(memberId, todo.id);
-      router.reload();
-      toast.addToast(t("dock.todo_modal.task_deleted"), { type: "success" });
+      onRefresh();
     } catch {
-      toast.addToast(t("dock.todo_modal.error_delete"), { type: "error" });
+      // Silently ignore
     }
-  };
+  }, [memberId, todo.id, onRefresh]);
 
   const handleDoubleClick = () => {
     setEditText(todo.content);
@@ -166,7 +145,7 @@ function TodoItem({ todo, memberId, onUpdate, priorityOptions, priorityLabels })
     setIsEditing(true);
   };
 
-  const handleSaveEdit = async () => {
+  const handleSaveEdit = useCallback(async () => {
     const trimmed = editText.trim();
     if (!trimmed) {
       setIsEditing(false);
@@ -177,21 +156,15 @@ function TodoItem({ todo, memberId, onUpdate, priorityOptions, priorityLabels })
         todo: { content: trimmed, priority: editPriority },
       });
       setIsEditing(false);
-      router.reload();
-      toast.addToast(t("dock.todo_modal.task_updated"), { type: "success" });
+      onRefresh();
     } catch {
-      toast.addToast(t("dock.todo_modal.error_update"), { type: "error" });
-    }
-  };
-
-  const handleEditKeyDown = (e) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      handleSaveEdit();
-    }
-    if (e.key === "Escape") {
       setIsEditing(false);
     }
+  }, [memberId, todo.id, editText, editPriority, onRefresh]);
+
+  const handleEditKeyDown = (e) => {
+    if (e.key === "Enter") { e.preventDefault(); handleSaveEdit(); }
+    if (e.key === "Escape") setIsEditing(false);
   };
 
   const tags = parseTags(todo.tags);
@@ -200,7 +173,7 @@ function TodoItem({ todo, memberId, onUpdate, priorityOptions, priorityLabels })
     <div
       style={{
         ...styles.todoCard,
-        opacity: todo.completed ? 0.5 : 1,
+        opacity: todo.completed ? 0.55 : 1,
         backgroundColor: hovered ? colors.s2 : colors.s1,
       }}
       onMouseEnter={() => setHovered(true)}
@@ -216,11 +189,9 @@ function TodoItem({ todo, memberId, onUpdate, priorityOptions, priorityLabels })
             backgroundColor: todo.completed ? colors.accent : "transparent",
             borderColor: todo.completed ? colors.accent : colors.border2,
           }}
-          title={todo.completed ? t("dock.todo_modal.task_reactivated") : t("dock.todo_modal.task_done")}
+          title={todo.completed ? "Marquer comme non termin\u00e9e" : "Marquer comme termin\u00e9e"}
         >
-          {todo.completed && (
-            <span style={styles.checkmark}>{"\u2713"}</span>
-          )}
+          {todo.completed && <span style={styles.checkmark}>&#10003;</span>}
         </button>
 
         {/* Content */}
@@ -236,7 +207,7 @@ function TodoItem({ todo, memberId, onUpdate, priorityOptions, priorityLabels })
                 onBlur={handleSaveEdit}
                 style={styles.editInput}
               />
-              <PrioritySelect value={editPriority} onChange={setEditPriority} options={priorityOptions} />
+              <PrioritySelect value={editPriority} onChange={setEditPriority} />
             </div>
           ) : (
             <span
@@ -253,28 +224,22 @@ function TodoItem({ todo, memberId, onUpdate, priorityOptions, priorityLabels })
           )}
         </div>
 
-        {/* Priority badge */}
-        {!isEditing && <PriorityBadge priority={todo.priority || "medium"} priorityLabels={priorityLabels} />}
+        {!isEditing && <PriorityBadge priority={todo.priority || "medium"} />}
 
-        {/* Delete button */}
         <button
           type="button"
           onClick={handleDelete}
-          style={{
-            ...styles.deleteBtn,
-            opacity: hovered ? 1 : 0,
-          }}
+          style={{ ...styles.deleteBtn, opacity: hovered ? 1 : 0 }}
           title="Supprimer"
         >
-          {"\u00D7"}
+          &times;
         </button>
       </div>
 
-      {/* Tags */}
       {tags.length > 0 && (
         <div style={styles.tagsRow}>
           {tags.map((tag, i) => (
-            <TagBadge key={i} tag={tag} />
+            <span key={i} style={styles.tagBadge}>{tag}</span>
           ))}
         </div>
       )}
@@ -286,127 +251,128 @@ function TodoItem({ todo, memberId, onUpdate, priorityOptions, priorityLabels })
 // Main component
 // ---------------------------------------------------------------------------
 
-export default function TodoPanel({ todos = [], memberId }) {
-  const toast = useToast();
-  const { t } = useTranslation();
+export default function TodoModal() {
+  const { props } = usePage();
+  const currentMemberId = props.current_member_id;
+
+  const [todos, setTodos] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [newContent, setNewContent] = useState("");
   const [newPriority, setNewPriority] = useState("medium");
   const [hideCompleted, setHideCompleted] = useState(false);
 
-  const priorityOptions = [
-    { value: "low", label: t("dock.todo_modal.priority.low") },
-    { value: "medium", label: t("dock.todo_modal.priority.medium") },
-    { value: "high", label: t("dock.todo_modal.priority.high") },
-  ];
-
-  const priorityLabels = {
-    high: t("dock.todo_modal.priority.high"),
-    medium: t("dock.todo_modal.priority.medium"),
-    low: t("dock.todo_modal.priority.low"),
-  };
-
-  const sortedTodos = useMemo(() => sortTodos(todos), [todos]);
-
-  const displayTodos = useMemo(() => {
-    if (hideCompleted) return sortedTodos.filter((t) => !t.completed);
-    return sortedTodos;
-  }, [sortedTodos, hideCompleted]);
-
-  const completedCount = useMemo(
-    () => todos.filter((t) => t.completed).length,
-    [todos],
-  );
-
-  const handleAdd = async () => {
-    const trimmed = newContent.trim();
-    if (!trimmed) return;
-
+  // Fetch todos
+  const fetchTodos = useCallback(async () => {
+    if (!currentMemberId) return;
     try {
-      const maxPosition = todos.reduce(
-        (max, t) => Math.max(max, t.position ?? 0),
-        0,
-      );
-      await apiPost(memberId, {
-        todo: {
-          content: trimmed,
-          priority: newPriority,
-          position: maxPosition + 1,
-        },
+      const res = await fetch(`/api/members/${currentMemberId}/todos`, {
+        headers: { Accept: "application/json" },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data)) setTodos(data);
+      }
+    } catch {
+      // Silently ignore
+    }
+  }, [currentMemberId]);
+
+  useEffect(() => {
+    fetchTodos().finally(() => setLoading(false));
+  }, [fetchTodos]);
+
+  const onRefresh = useCallback(() => {
+    fetchTodos();
+  }, [fetchTodos]);
+
+  const handleAdd = useCallback(async () => {
+    const trimmed = newContent.trim();
+    if (!trimmed || !currentMemberId) return;
+
+    const maxPosition = todos.reduce((max, t) => Math.max(max, t.position ?? 0), 0);
+    try {
+      await apiPost(currentMemberId, {
+        todo: { content: trimmed, priority: newPriority, position: maxPosition + 1 },
       });
       setNewContent("");
       setNewPriority("medium");
-      router.reload();
-      toast.addToast(t("dock.todo_modal.task_added"), { type: "success" });
+      fetchTodos();
     } catch {
-      toast.addToast(t("dock.todo_modal.error_add"), { type: "error" });
+      // Silently ignore
     }
-  };
+  }, [newContent, newPriority, currentMemberId, todos, fetchTodos]);
 
   const handleInputKeyDown = (e) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      handleAdd();
-    }
+    if (e.key === "Enter") { e.preventDefault(); handleAdd(); }
   };
+
+  const sorted = useMemo(() => sortTodos(todos), [todos]);
+  const displayed = useMemo(
+    () => (hideCompleted ? sorted.filter((t) => !t.completed) : sorted),
+    [sorted, hideCompleted],
+  );
+  const completedCount = useMemo(() => todos.filter((t) => t.completed).length, [todos]);
 
   return (
     <div style={styles.container}>
-      {/* Header */}
-      <div style={styles.header}>
-        <div style={styles.headerLeft}>
-          <span style={styles.headerTitle}>{t("dock.todo_modal.title")}</span>
-          <span style={styles.headerCount}>{todos.length}</span>
+      {/* ---- Toolbar ---- */}
+      <div style={styles.toolbar}>
+        <div style={styles.toolbarLeft}>
+          <span style={styles.count}>{todos.length} t\u00e2che{todos.length !== 1 ? "s" : ""}</span>
         </div>
         {completedCount > 0 && (
           <button
             type="button"
             onClick={() => setHideCompleted((h) => !h)}
-            style={styles.collapseBtn}
+            style={styles.toggleBtn}
           >
             {hideCompleted
-              ? t("dock.todo_modal.show_completed").replace("%{count}", completedCount)
-              : t("dock.todo_modal.hide_completed")}
+              ? `Afficher termin\u00e9es (${completedCount})`
+              : "Masquer termin\u00e9es"}
           </button>
         )}
       </div>
 
-      {/* Add input */}
+      {/* ---- Add row ---- */}
       <div style={styles.addRow}>
         <input
           type="text"
           value={newContent}
           onChange={(e) => setNewContent(e.target.value)}
           onKeyDown={handleInputKeyDown}
-          placeholder={t("dock.todo_modal.add_placeholder")}
+          placeholder="Nouvelle t\u00e2che\u2026"
           style={styles.addInput}
         />
-        <PrioritySelect value={newPriority} onChange={setNewPriority} options={priorityOptions} />
+        <PrioritySelect value={newPriority} onChange={setNewPriority} />
         <button
           type="button"
           onClick={handleAdd}
-          style={styles.addBtn}
           disabled={!newContent.trim()}
+          style={{
+            ...styles.addBtn,
+            opacity: newContent.trim() ? 1 : 0.45,
+            cursor: newContent.trim() ? "pointer" : "not-allowed",
+          }}
         >
           +
         </button>
       </div>
 
-      {/* Todo list */}
-      <div style={styles.listContainer}>
-        {displayTodos.length === 0 ? (
+      {/* ---- List ---- */}
+      <div style={styles.list}>
+        {loading ? (
+          <p style={styles.emptyText}>Chargement&hellip;</p>
+        ) : displayed.length === 0 ? (
           <p style={styles.emptyText}>
-            {hideCompleted
-              ? t("dock.todo_modal.all_done")
-              : t("dock.todo_modal.empty")}
+            {hideCompleted ? "Toutes les t\u00e2ches sont termin\u00e9es" : "Aucune t\u00e2che"}
           </p>
         ) : (
-          displayTodos.map((todo) => (
+          displayed.map((todo) => (
             <TodoItem
               key={todo.id}
               todo={todo}
-              memberId={memberId}
-              priorityOptions={priorityOptions}
-              priorityLabels={priorityLabels}
+              memberId={currentMemberId}
+              onRefresh={onRefresh}
             />
           ))
         )}
@@ -423,171 +389,145 @@ const styles = {
   container: {
     display: "flex",
     flexDirection: "column",
+    flex: 1,
+    minHeight: 0,
     height: "100%",
-    backgroundColor: colors.s1,
-    borderRadius: radii.card,
-    border: `1px solid ${colors.border}`,
-    overflow: "hidden",
   },
 
-  // Header
-  header: {
+  toolbar: {
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
-    padding: "10px 12px",
+    padding: "10px 24px",
     borderBottom: `1px solid ${colors.border}`,
+    flexShrink: 0,
   },
-
-  headerLeft: {
+  toolbarLeft: {
     display: "flex",
     alignItems: "center",
     gap: 8,
   },
-
-  headerTitle: {
+  count: {
     fontFamily: fonts.outfit,
     fontSize: 13,
-    fontWeight: 700,
-    color: colors.text,
-  },
-
-  headerCount: {
-    fontFamily: fonts.dmMono,
-    fontSize: 11,
     fontWeight: 600,
-    color: colors.text3,
-    backgroundColor: colors.s3,
-    borderRadius: 10,
-    padding: "1px 7px",
-    lineHeight: 1.4,
+    color: colors.text2,
   },
-
-  collapseBtn: {
+  toggleBtn: {
     fontFamily: fonts.outfit,
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: 600,
     color: colors.accent,
     backgroundColor: "transparent",
     border: "none",
     cursor: "pointer",
-    padding: "2px 4px",
+    padding: "2px 6px",
+    borderRadius: radii.button,
   },
 
-  // Add row
   addRow: {
     display: "flex",
     alignItems: "center",
-    gap: 6,
-    padding: "8px 12px",
+    gap: 8,
+    padding: "12px 24px",
     borderBottom: `1px solid ${colors.border}`,
+    flexShrink: 0,
   },
-
   addInput: {
     flex: 1,
     fontFamily: fonts.outfit,
-    fontSize: 12,
+    fontSize: 13,
     color: colors.text,
-    backgroundColor: "transparent",
-    border: "none",
-    borderBottom: `1px solid ${colors.border}`,
-    padding: "6px 0",
+    backgroundColor: colors.s2,
+    border: `1px solid ${colors.border}`,
+    borderRadius: radii.button,
+    padding: "8px 12px",
     outline: "none",
   },
-
   addBtn: {
-    width: 28,
-    height: 28,
+    width: 36,
+    height: 36,
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     fontFamily: fonts.outfit,
-    fontSize: 16,
+    fontSize: 20,
     fontWeight: 700,
     color: "#ffffff",
-    backgroundColor: colors.accent,
+    backgroundColor: "#059669",
     border: "none",
     borderRadius: radii.button,
-    cursor: "pointer",
     lineHeight: 1,
     flexShrink: 0,
+    transition: "opacity 0.15s ease",
   },
-
   prioritySelect: {
     fontFamily: fonts.outfit,
-    fontSize: 10,
+    fontSize: 11,
     color: colors.text2,
     backgroundColor: colors.s2,
     border: `1px solid ${colors.border}`,
     borderRadius: 4,
-    padding: "3px 4px",
+    padding: "5px 6px",
     outline: "none",
     cursor: "pointer",
     flexShrink: 0,
   },
 
-  // List
-  listContainer: {
+  list: {
     flex: 1,
     overflowY: "auto",
-    padding: "6px 8px",
+    padding: "10px 24px",
   },
-
   emptyText: {
     fontFamily: fonts.outfit,
-    fontSize: 12,
+    fontSize: 13,
     color: colors.text3,
     textAlign: "center",
     margin: 0,
-    paddingTop: 24,
+    paddingTop: 32,
   },
 
-  // Todo card
   todoCard: {
-    padding: "8px 12px",
+    padding: "10px 14px",
     border: `1px solid ${colors.border}`,
-    borderRadius: radii.button,
-    marginBottom: 4,
+    borderRadius: radii.card,
+    marginBottom: 6,
     transition: "background-color 0.1s ease",
   },
-
   todoRow: {
     display: "flex",
     alignItems: "center",
-    gap: 8,
+    gap: 10,
   },
 
-  // Checkbox
   checkbox: {
-    width: 16,
-    height: 16,
-    minWidth: 16,
+    width: 18,
+    height: 18,
+    minWidth: 18,
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     border: "1.5px solid",
-    borderRadius: 3,
+    borderRadius: 4,
     cursor: "pointer",
     padding: 0,
     flexShrink: 0,
   },
-
   checkmark: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: 700,
     color: "#ffffff",
     lineHeight: 1,
   },
 
-  // Content
   todoContent: {
     flex: 1,
     minWidth: 0,
   },
-
   todoText: {
     fontFamily: fonts.outfit,
-    fontSize: 12,
+    fontSize: 13,
     color: colors.text,
     lineHeight: 1.4,
     display: "block",
@@ -595,71 +535,60 @@ const styles = {
     textOverflow: "ellipsis",
   },
 
-  // Edit
-  editRow: {
-    display: "flex",
-    alignItems: "center",
-    gap: 6,
-  },
-
+  editRow: { display: "flex", alignItems: "center", gap: 8 },
   editInput: {
     flex: 1,
     fontFamily: fonts.outfit,
-    fontSize: 12,
+    fontSize: 13,
     color: colors.text,
     backgroundColor: colors.s2,
     border: `1px solid ${colors.accent}`,
-    borderRadius: 3,
-    padding: "3px 6px",
+    borderRadius: 4,
+    padding: "4px 8px",
     outline: "none",
   },
 
-  // Priority badge
   priorityBadge: {
     fontFamily: fonts.outfit,
-    fontSize: 9,
+    fontSize: 10,
     fontWeight: 700,
     textTransform: "uppercase",
-    padding: "2px 6px",
-    borderRadius: 3,
+    padding: "2px 7px",
+    borderRadius: 4,
     whiteSpace: "nowrap",
     flexShrink: 0,
     lineHeight: 1.4,
   },
 
-  // Tag badge
   tagBadge: {
     fontFamily: fonts.outfit,
-    fontSize: 9,
+    fontSize: 10,
     color: colors.text2,
     backgroundColor: colors.s3,
-    borderRadius: radii.pill,
-    padding: "1px 6px",
+    borderRadius: 10,
+    padding: "1px 7px",
     lineHeight: 1.4,
   },
-
   tagsRow: {
     display: "flex",
     flexWrap: "wrap",
     gap: 4,
-    marginTop: 4,
-    paddingLeft: 24,
+    marginTop: 5,
+    paddingLeft: 28,
   },
 
-  // Delete button
   deleteBtn: {
-    width: 20,
-    height: 20,
+    width: 22,
+    height: 22,
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    fontFamily: fonts.outfit,
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 600,
     color: colors.critical,
     backgroundColor: "transparent",
     border: "none",
-    borderRadius: 3,
+    borderRadius: 4,
     cursor: "pointer",
     padding: 0,
     lineHeight: 1,

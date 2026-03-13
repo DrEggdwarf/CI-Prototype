@@ -10,6 +10,9 @@
     "format:check": "prettier --check app/frontend"
   },
   "dependencies": {
+    "@fortawesome/fontawesome-svg-core": "^7.2.0",
+    "@fortawesome/free-solid-svg-icons": "^7.2.0",
+    "@fortawesome/react-fontawesome": "^3.2.0",
     "@inertiajs/react": "^2.0.0",
     "@rails/actioncable": "^8.1.200",
     "react": "^18.0.0",

@@ -5,6 +5,7 @@ class Member < ApplicationRecord
   has_many :attachments, dependent: :destroy
   has_many :todos, dependent: :destroy
   has_many :team_messages, dependent: :destroy
+  has_many :documents, foreign_key: :uploaded_by_id, dependent: :nullify
 
   validates :name, presence: true
   validates :role, presence: true

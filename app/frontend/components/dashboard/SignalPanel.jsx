@@ -1,4 +1,5 @@
 import { colors, fonts, radii } from "../../styles/tokens";
+import { useTranslation } from "../../lib/useTranslation";
 
 /**
  * SignalPanel — panel latéral fixe affichant les signaux faibles IA.
@@ -8,14 +9,21 @@ import { colors, fonts, radii } from "../../styles/tokens";
  *                                  severity: "h" | "m" | "l"
  */
 export default function SignalPanel({ signals = [] }) {
+  const { t } = useTranslation();
   const visibleSignals = signals.slice(0, 5);
+
+  const severityLabels = {
+    h: t("dashboard.signals.severity_high"),
+    m: t("dashboard.signals.severity_medium"),
+    l: t("dashboard.signals.severity_low"),
+  };
 
   return (
     <aside style={styles.container}>
-      <div style={styles.header}>SIGNAUX IA</div>
+      <div style={styles.header}>{t("dashboard.signals.title")}</div>
 
       {visibleSignals.length === 0 ? (
-        <p style={styles.empty}>Aucun signal détecté</p>
+        <p style={styles.empty}>{t("dashboard.signals.none")}</p>
       ) : (
         visibleSignals.map((signal) => (
           <div key={signal.id} style={styles.card}>
@@ -39,12 +47,6 @@ export default function SignalPanel({ signals = [] }) {
 // ---------------------------------------------------------------------------
 // Severity config
 // ---------------------------------------------------------------------------
-
-const severityLabels = {
-  h: "Élevé",
-  m: "Moyen",
-  l: "Faible",
-};
 
 const severityStyles = {
   h: { backgroundColor: "#fef2f2", color: "#dc2626" },
@@ -71,7 +73,7 @@ const styles = {
 
   header: {
     fontFamily: fonts.outfit,
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: 700,
     textTransform: "uppercase",
     letterSpacing: ".6px",
@@ -111,14 +113,14 @@ const styles = {
   },
 
   icon: {
-    fontSize: 14,
+    fontSize: 16,
     lineHeight: 1,
     flexShrink: 0,
   },
 
   title: {
     fontFamily: fonts.outfit,
-    fontSize: 11,
+    fontSize: 13,
     fontWeight: 600,
     color: colors.text,
     lineHeight: 1.2,
@@ -129,7 +131,7 @@ const styles = {
 
   badge: {
     fontFamily: fonts.outfit,
-    fontSize: 8,
+    fontSize: 10,
     fontWeight: 700,
     textTransform: "uppercase",
     padding: "1px 5px",
@@ -141,7 +143,7 @@ const styles = {
 
   description: {
     fontFamily: fonts.outfit,
-    fontSize: 10,
+    fontSize: 12,
     color: colors.text2,
     lineHeight: 1.4,
     margin: "4px 0 0 0",

@@ -1,18 +1,12 @@
 import { useState, useMemo, useCallback } from "react";
 import { router } from "@inertiajs/react";
 import { useToast } from "../../lib/useToast";
+import { useTranslation } from "../../lib/useTranslation";
 import { colors, fonts, radii, shadows, zIndex } from "../../styles/tokens";
 
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
-
-const CRITICALITY_OPTIONS = [
-  { value: "critical", label: "Critique" },
-  { value: "high", label: "Elevee" },
-  { value: "medium", label: "Moyenne" },
-  { value: "low", label: "Faible" },
-];
 
 const CRITICALITY_COLORS = {
   critical: { bg: "#fef2f2", color: "#dc2626", border: "#fca5a5" },
@@ -21,45 +15,10 @@ const CRITICALITY_COLORS = {
   low: { bg: "#f0fdf4", color: "#16a34a", border: "#86efac" },
 };
 
-const FREQUENCY_OPTIONS = [
-  { value: "daily", label: "Quotidien" },
-  { value: "weekly", label: "Hebdomadaire" },
-  { value: "monthly", label: "Mensuel" },
-  { value: "quarterly", label: "Trimestriel" },
-  { value: "yearly", label: "Annuel" },
-];
-
-const FREQUENCY_LABELS = {
-  daily: "Quotidien",
-  weekly: "Hebdomadaire",
-  monthly: "Mensuel",
-  quarterly: "Trimestriel",
-  yearly: "Annuel",
-};
-
-const STATUS_OPTIONS = [
-  { value: "pending", label: "En cours" },
-  { value: "overdue", label: "En retard" },
-  { value: "done", label: "Termine" },
-];
-
 const STATUS_COLORS = {
   pending: { bg: "#eef2ff", color: "#2563eb", border: "#bfdbfe" },
   overdue: { bg: "#fef2f2", color: "#dc2626", border: "#fca5a5" },
   done: { bg: "#f0fdf4", color: "#16a34a", border: "#86efac" },
-};
-
-const STATUS_LABELS = {
-  pending: "En cours",
-  overdue: "En retard",
-  done: "Termine",
-};
-
-const CRITICALITY_LABELS = {
-  critical: "Critique",
-  high: "Elevee",
-  medium: "Moyenne",
-  low: "Faible",
 };
 
 const EMPTY_FORM = {
@@ -137,6 +96,7 @@ function Badge({ label, bg, color, border }) {
 // ---------------------------------------------------------------------------
 
 function ConfirmDialog({ message, onConfirm, onCancel }) {
+  const { t } = useTranslation();
   return (
     <div style={styles.overlay} onClick={onCancel}>
       <div
@@ -150,14 +110,14 @@ function ConfirmDialog({ message, onConfirm, onCancel }) {
             onClick={onCancel}
             style={styles.btnSecondary}
           >
-            Annuler
+            {t("common.cancel")}
           </button>
           <button
             type="button"
             onClick={onConfirm}
             style={styles.btnDanger}
           >
-            Supprimer
+            {t("common.delete")}
           </button>
         </div>
       </div>
@@ -169,7 +129,7 @@ function ConfirmDialog({ message, onConfirm, onCancel }) {
 // Control Form Modal sub-component
 // ---------------------------------------------------------------------------
 
-function ControlFormModal({ mode, initialData, domains, members, onClose, onSubmit }) {
+function ControlFormModal({ mode, initialData, domains, members, onClose, onSubmit, criticalityOptions, frequencyOptions, statusOptions }) {
   const [form, setForm] = useState(() => {
     if (mode === "edit" && initialData) {
       return {
@@ -234,7 +194,8 @@ function ControlFormModal({ mode, initialData, domains, members, onClose, onSubm
     [form, validate, onSubmit]
   );
 
-  const title = mode === "edit" ? "Modifier le controle" : "Ajouter un controle";
+  const { t } = useTranslation();
+  const title = mode === "edit" ? t("settings.controls.title") : t("settings.controls.add");
 
   return (
     <div style={styles.overlay} onClick={onClose}>
@@ -262,7 +223,7 @@ function ControlFormModal({ mode, initialData, domains, members, onClose, onSubm
         <form onSubmit={handleSubmit} style={styles.modalBody}>
           {/* Nom */}
           <div style={styles.fieldGroup}>
-            <label style={styles.fieldLabel}>Nom *</label>
+            <label style={styles.fieldLabel}>{t("settings.controls.name")} *</label>
             <input
               type="text"
               value={form.name}
@@ -271,14 +232,14 @@ function ControlFormModal({ mode, initialData, domains, members, onClose, onSubm
                 ...styles.input,
                 borderColor: errors.name ? colors.critical : colors.border,
               }}
-              placeholder="Nom du controle"
+              placeholder={t("settings.controls.name")}
             />
             {errors.name && <span style={styles.fieldError}>{errors.name}</span>}
           </div>
 
           {/* Domaine */}
           <div style={styles.fieldGroup}>
-            <label style={styles.fieldLabel}>Domaine *</label>
+            <label style={styles.fieldLabel}>{t("settings.controls.domain")} *</label>
             <select
               value={form.domain}
               onChange={(e) => handleChange("domain", e.target.value)}
@@ -287,7 +248,7 @@ function ControlFormModal({ mode, initialData, domains, members, onClose, onSubm
                 borderColor: errors.domain ? colors.critical : colors.border,
               }}
             >
-              <option value="">-- Selectionner --</option>
+              <option value="">--</option>
               {domains.map((d) => (
                 <option key={d.id} value={d.key || d.name}>
                   {d.name}
@@ -300,7 +261,7 @@ function ControlFormModal({ mode, initialData, domains, members, onClose, onSubm
           {/* Row: Criticite + Frequence */}
           <div style={styles.fieldRow}>
             <div style={{ ...styles.fieldGroup, flex: 1 }}>
-              <label style={styles.fieldLabel}>Criticite *</label>
+              <label style={styles.fieldLabel}>{t("settings.controls.criticality")} *</label>
               <select
                 value={form.criticality}
                 onChange={(e) => handleChange("criticality", e.target.value)}
@@ -309,8 +270,8 @@ function ControlFormModal({ mode, initialData, domains, members, onClose, onSubm
                   borderColor: errors.criticality ? colors.critical : colors.border,
                 }}
               >
-                <option value="">-- Selectionner --</option>
-                {CRITICALITY_OPTIONS.map((opt) => (
+                <option value="">--</option>
+                {criticalityOptions.map((opt) => (
                   <option key={opt.value} value={opt.value}>
                     {opt.label}
                   </option>
@@ -321,14 +282,14 @@ function ControlFormModal({ mode, initialData, domains, members, onClose, onSubm
               )}
             </div>
             <div style={{ ...styles.fieldGroup, flex: 1 }}>
-              <label style={styles.fieldLabel}>Frequence</label>
+              <label style={styles.fieldLabel}>{t("settings.controls.periodicity")}</label>
               <select
                 value={form.frequency}
                 onChange={(e) => handleChange("frequency", e.target.value)}
                 style={styles.select}
               >
-                <option value="">-- Selectionner --</option>
-                {FREQUENCY_OPTIONS.map((opt) => (
+                <option value="">--</option>
+                {frequencyOptions.map((opt) => (
                   <option key={opt.value} value={opt.value}>
                     {opt.label}
                   </option>
@@ -340,7 +301,7 @@ function ControlFormModal({ mode, initialData, domains, members, onClose, onSubm
           {/* Row: Echeance + Statut */}
           <div style={styles.fieldRow}>
             <div style={{ ...styles.fieldGroup, flex: 1 }}>
-              <label style={styles.fieldLabel}>Echeance</label>
+              <label style={styles.fieldLabel}>{t("settings.controls.due_date")}</label>
               <input
                 type="date"
                 value={form.due_date}
@@ -349,13 +310,13 @@ function ControlFormModal({ mode, initialData, domains, members, onClose, onSubm
               />
             </div>
             <div style={{ ...styles.fieldGroup, flex: 1 }}>
-              <label style={styles.fieldLabel}>Statut</label>
+              <label style={styles.fieldLabel}>{t("common.status")}</label>
               <select
                 value={form.status}
                 onChange={(e) => handleChange("status", e.target.value)}
                 style={styles.select}
               >
-                {STATUS_OPTIONS.map((opt) => (
+                {statusOptions.map((opt) => (
                   <option key={opt.value} value={opt.value}>
                     {opt.label}
                   </option>
@@ -367,7 +328,7 @@ function ControlFormModal({ mode, initialData, domains, members, onClose, onSubm
           {/* Row: Taux de reussite + Duree */}
           <div style={styles.fieldRow}>
             <div style={{ ...styles.fieldGroup, flex: 1 }}>
-              <label style={styles.fieldLabel}>Taux de reussite</label>
+              <label style={styles.fieldLabel}>%</label>
               <div style={styles.inputWithSuffix}>
                 <input
                   type="number"
@@ -382,7 +343,7 @@ function ControlFormModal({ mode, initialData, domains, members, onClose, onSubm
               </div>
             </div>
             <div style={{ ...styles.fieldGroup, flex: 1 }}>
-              <label style={styles.fieldLabel}>Duree (jours)</label>
+              <label style={styles.fieldLabel}>{t("common.date")} (jours)</label>
               <input
                 type="number"
                 min="1"
@@ -396,13 +357,13 @@ function ControlFormModal({ mode, initialData, domains, members, onClose, onSubm
 
           {/* Assigne */}
           <div style={styles.fieldGroup}>
-            <label style={styles.fieldLabel}>Assigne</label>
+            <label style={styles.fieldLabel}>{t("settings.controls.assignee")}</label>
             <select
               value={form.assignee_id}
               onChange={(e) => handleChange("assignee_id", e.target.value)}
               style={styles.select}
             >
-              <option value="">Non assigne</option>
+              <option value="">--</option>
               {members.map((m) => (
                 <option key={m.id} value={String(m.id)}>
                   {m.name}
@@ -418,7 +379,7 @@ function ControlFormModal({ mode, initialData, domains, members, onClose, onSubm
               onClick={onClose}
               style={styles.btnSecondary}
             >
-              Annuler
+              {t("common.cancel")}
             </button>
             <button
               type="submit"
@@ -430,10 +391,10 @@ function ControlFormModal({ mode, initialData, domains, members, onClose, onSubm
               }}
             >
               {submitting
-                ? "Enregistrement..."
+                ? t("common.loading")
                 : mode === "edit"
-                  ? "Enregistrer"
-                  : "Creer"}
+                  ? t("common.save")
+                  : t("common.create")}
             </button>
           </div>
         </form>
@@ -482,6 +443,50 @@ function SortableHeader({ label, sortKey, currentSort, onSort, style }) {
 
 export default function ControlsTab({ controls = [], members = [], domains = [] }) {
   const toast = useToast();
+  const { t } = useTranslation();
+
+  // Dynamic constants
+  const CRITICALITY_OPTIONS = [
+    { value: "critical", label: t("criticality.critical") },
+    { value: "high", label: t("criticality.high") },
+    { value: "medium", label: t("criticality.medium") },
+    { value: "low", label: t("criticality.low") },
+  ];
+
+  const FREQUENCY_OPTIONS = [
+    { value: "daily", label: "Quotidien" },
+    { value: "weekly", label: "Hebdomadaire" },
+    { value: "monthly", label: "Mensuel" },
+    { value: "quarterly", label: "Trimestriel" },
+    { value: "yearly", label: "Annuel" },
+  ];
+
+  const FREQUENCY_LABELS = {
+    daily: "Quotidien",
+    weekly: "Hebdomadaire",
+    monthly: "Mensuel",
+    quarterly: "Trimestriel",
+    yearly: "Annuel",
+  };
+
+  const STATUS_OPTIONS = [
+    { value: "pending", label: t("dashboard.kpi.pending") },
+    { value: "overdue", label: t("dashboard.kpi.overdue") },
+    { value: "done", label: t("dashboard.kpi.completed") },
+  ];
+
+  const STATUS_LABELS = {
+    pending: t("dashboard.kpi.pending"),
+    overdue: t("dashboard.kpi.overdue"),
+    done: t("dashboard.kpi.completed"),
+  };
+
+  const CRITICALITY_LABELS = {
+    critical: t("criticality.critical"),
+    high: t("criticality.high"),
+    medium: t("criticality.medium"),
+    low: t("criticality.low"),
+  };
 
   // Search
   const [search, setSearch] = useState("");
@@ -575,7 +580,7 @@ export default function ControlsTab({ controls = [], members = [], domains = [] 
         .then((res) => {
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
           toast.addToast(
-            isEdit ? "Controle mis a jour" : "Controle cree",
+            isEdit ? t("dock.todo_modal.task_updated") : t("dock.todo_modal.task_added"),
             { type: "success" }
           );
           handleCloseModal();
@@ -583,7 +588,7 @@ export default function ControlsTab({ controls = [], members = [], domains = [] 
         })
         .catch((err) => {
           console.error("ControlsTab submit error:", err);
-          toast.addToast("Erreur lors de l'enregistrement", { type: "error" });
+          toast.addToast(t("dock.todo_modal.error_update"), { type: "error" });
           resetSubmitting();
         });
     },
@@ -596,13 +601,13 @@ export default function ControlsTab({ controls = [], members = [], domains = [] 
       fetch(`/api/controls/${id}`, { method: "DELETE" })
         .then((res) => {
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          toast.addToast("Controle supprime", { type: "success" });
+          toast.addToast(t("dock.todo_modal.task_deleted"), { type: "success" });
           setDeletingId(null);
           router.reload();
         })
         .catch((err) => {
           console.error("ControlsTab delete error:", err);
-          toast.addToast("Erreur lors de la suppression", { type: "error" });
+          toast.addToast(t("dock.todo_modal.error_delete"), { type: "error" });
           setDeletingId(null);
         });
     },
@@ -615,21 +620,21 @@ export default function ControlsTab({ controls = [], members = [], domains = [] 
       <div style={styles.toolbar}>
         <input
           type="text"
-          placeholder="Rechercher un controle..."
+          placeholder={t("common.search")}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           style={styles.searchInput}
         />
         <div style={styles.toolbarRight}>
           <span style={styles.counter}>
-            {filteredControls.length} controle{filteredControls.length !== 1 ? "s" : ""}
+            {filteredControls.length} {filteredControls.length !== 1 ? t("common.controls") : t("common.control")}
           </span>
           <button
             type="button"
             onClick={handleOpenCreate}
             style={styles.btnPrimary}
           >
-            + Ajouter un controle
+            + {t("settings.controls.add")}
           </button>
         </div>
       </div>
@@ -638,14 +643,14 @@ export default function ControlsTab({ controls = [], members = [], domains = [] 
       <div style={styles.tableWrapper}>
         {/* Table header */}
         <div style={styles.tableRow}>
-          <SortableHeader label="Nom" sortKey="name" currentSort={sort} onSort={handleSort} style={{ flex: 2.5 }} />
-          <SortableHeader label="Domaine" sortKey="domain" currentSort={sort} onSort={handleSort} style={{ flex: 1.2 }} />
-          <SortableHeader label="Criticite" sortKey="criticality" currentSort={sort} onSort={handleSort} style={{ flex: 1 }} />
-          <SortableHeader label="Frequence" sortKey="frequency" currentSort={sort} onSort={handleSort} style={{ flex: 1.1 }} />
-          <SortableHeader label="Echeance" sortKey="due_date" currentSort={sort} onSort={handleSort} style={{ flex: 1.1 }} />
-          <SortableHeader label="Statut" sortKey="status" currentSort={sort} onSort={handleSort} style={{ flex: 1 }} />
-          <SortableHeader label="Assigne" sortKey="assignee_id" currentSort={sort} onSort={handleSort} style={{ flex: 1.2 }} />
-          <div style={{ ...styles.colHeader, width: 68, flexShrink: 0 }}>Actions</div>
+          <SortableHeader label={t("common.name")} sortKey="name" currentSort={sort} onSort={handleSort} style={{ flex: 2.5 }} />
+          <SortableHeader label={t("settings.controls.domain")} sortKey="domain" currentSort={sort} onSort={handleSort} style={{ flex: 1.2 }} />
+          <SortableHeader label={t("settings.controls.criticality")} sortKey="criticality" currentSort={sort} onSort={handleSort} style={{ flex: 1 }} />
+          <SortableHeader label={t("settings.controls.periodicity")} sortKey="frequency" currentSort={sort} onSort={handleSort} style={{ flex: 1.1 }} />
+          <SortableHeader label={t("settings.controls.due_date")} sortKey="due_date" currentSort={sort} onSort={handleSort} style={{ flex: 1.1 }} />
+          <SortableHeader label={t("common.status")} sortKey="status" currentSort={sort} onSort={handleSort} style={{ flex: 1 }} />
+          <SortableHeader label={t("settings.controls.assignee")} sortKey="assignee_id" currentSort={sort} onSort={handleSort} style={{ flex: 1.2 }} />
+          <div style={{ ...styles.colHeader, width: 68, flexShrink: 0 }}>{t("common.actions")}</div>
         </div>
 
         {/* Table body */}
@@ -653,8 +658,8 @@ export default function ControlsTab({ controls = [], members = [], domains = [] 
           <div style={styles.emptyState}>
             <span style={styles.emptyText}>
               {controls.length === 0
-                ? "Aucun controle pour le moment"
-                : "Aucun resultat pour cette recherche"}
+                ? t("dashboard.kanban.no_filter_results")
+                : t("common.no_results")}
             </span>
           </div>
         ) : (
@@ -767,13 +772,16 @@ export default function ControlsTab({ controls = [], members = [], domains = [] 
           members={members}
           onClose={handleCloseModal}
           onSubmit={handleSubmit}
+          criticalityOptions={CRITICALITY_OPTIONS}
+          frequencyOptions={FREQUENCY_OPTIONS}
+          statusOptions={STATUS_OPTIONS}
         />
       )}
 
       {/* Delete Confirmation */}
       {deletingId != null && (
         <ConfirmDialog
-          message="Etes-vous sur de vouloir supprimer ce controle ? Cette action est irreversible."
+          message={t("settings.controls.confirm_delete")}
           onConfirm={() => handleDelete(deletingId)}
           onCancel={() => setDeletingId(null)}
         />

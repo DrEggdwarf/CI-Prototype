@@ -47,7 +47,7 @@ class ApplicationController < ActionController::Base
 
   # Load only our app-defined top-level keys (not Rails/AS internals)
   # Add your new locale top-level keys here when you extend config/locales/
-  APP_LOCALE_KEYS = %w[app dashboard workspace settings].freeze
+  APP_LOCALE_KEYS = %w[app common nav auth criticality domains dashboard workspace settings dock].freeze
 
   def app_translations
     APP_LOCALE_KEYS.each_with_object({}) do |key, hash|

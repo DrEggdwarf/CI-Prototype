@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_12_140003) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_13_100002) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.bigint "blob_id", null: false
     t.datetime "created_at", null: false
@@ -78,6 +78,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_12_140003) do
     t.index ["status"], name: "index_controls_on_status"
   end
 
+  create_table "documents", force: :cascade do |t|
+    t.integer "control_id"
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.integer "file_size"
+    t.string "file_type"
+    t.string "file_url"
+    t.string "name", null: false
+    t.boolean "shared", default: true
+    t.datetime "updated_at", null: false
+    t.integer "uploaded_by_id"
+    t.index ["control_id"], name: "index_documents_on_control_id"
+    t.index ["uploaded_by_id"], name: "index_documents_on_uploaded_by_id"
+  end
+
   create_table "domains", force: :cascade do |t|
     t.string "color", null: false
     t.datetime "created_at", null: false
@@ -106,6 +121,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_12_140003) do
     t.datetime "updated_at", null: false
     t.index ["email"], name: "index_members_on_email", unique: true
     t.index ["reset_password_token"], name: "index_members_on_reset_password_token", unique: true
+  end
+
+  create_table "news_items", force: :cascade do |t|
+    t.string "category"
+    t.datetime "created_at", null: false
+    t.boolean "pinned", default: false
+    t.datetime "published_at"
+    t.string "source_name"
+    t.string "source_url"
+    t.text "summary"
+    t.json "tags", default: []
+    t.string "title", null: false
+    t.datetime "updated_at", null: false
   end
 
   create_table "picks", force: :cascade do |t|
@@ -153,6 +181,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_12_140003) do
   add_foreign_key "attachments", "members"
   add_foreign_key "comments", "controls"
   add_foreign_key "controls", "members", column: "assignee_id"
+  add_foreign_key "documents", "controls"
+  add_foreign_key "documents", "members", column: "uploaded_by_id"
   add_foreign_key "picks", "controls"
   add_foreign_key "team_messages", "members"
   add_foreign_key "todos", "members"
