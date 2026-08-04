@@ -2,7 +2,7 @@
 service: ci-prototype
 
 # Name of the container image.
-image: ci-prototype
+image: dreggdwarf/ci-prototype
 
 # Deploy to these servers.
 servers:
@@ -16,10 +16,10 @@ proxy:
   ssl: false
   app_port: 3000
 
-# Local Docker registry on the VPS.
+# GHCR — joignable partout (CI + VPS), registry unique de la flotte.
 registry:
-  server: 217.69.13.112:5555
-  username: kamal
+  server: ghcr.io
+  username: DrEggdwarf
   password:
     - KAMAL_REGISTRY_PASSWORD
 
@@ -63,13 +63,15 @@ volumes:
 # version inside the asset_path.
 asset_path: /rails/public/vite
 
-# Configure the image builder.
+# Build local sur le runner GitHub Actions (amd64) — plus de builder remote.
 builder:
   arch: amd64
-  remote: ssh://root@217.69.13.112
 
+# SSH sur le port 2022 : le port 22 est le honeypot Cowrie depuis le
+# durcissement du 2026-07-01 (PasswordAuthentication no, sshd deplace sur 2022).
+ssh:
+  port: 2022
 # Use a different ssh user than root
-# ssh:
 #   user: app
 
 # Use accessory services (secrets come from .kamal/secrets).

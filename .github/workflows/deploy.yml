@@ -1,0 +1,62 @@
+name: Deploy CI-Prototype (Kamal)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'app/**'
+      - 'config/**'
+      - 'lib/**'
+      - 'Dockerfile'
+      - 'Gemfile'
+      - 'Gemfile.lock'
+      - '.kamal/**'
+      - '.github/workflows/deploy.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-ci-prototype
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    env:
+      # GHCR push/pull via le token du job (registry.password dans deploy.yml)
+      KAMAL_REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+      RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Ruby (pour la CLI kamal)
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3'
+
+      - name: Install Kamal
+        run: gem install kamal -v '~> 2.12'
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Configure SSH (clé dédiée + known_hosts port 2022)
+        run: |
+          if [ -z "${{ secrets.VPS_SSH_KEY }}" ]; then
+            echo "✗ Secret VPS_SSH_KEY absent" >&2; exit 1
+          fi
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          # Le vrai sshd écoute sur 2022 (22 = honeypot Cowrie)
+          ssh-keyscan -p 2022 -t ed25519 217.69.13.112 >> ~/.ssh/known_hosts 2>/dev/null
+          eval "$(ssh-agent -s)"
+          ssh-add ~/.ssh/id_ed25519
+          echo "SSH_AUTH_SOCK=$SSH_AUTH_SOCK" >> "$GITHUB_ENV"
+          echo "SSH_AGENT_PID=$SSH_AGENT_PID" >> "$GITHUB_ENV"
+
+      - name: Kamal deploy
+        run: kamal deploy
